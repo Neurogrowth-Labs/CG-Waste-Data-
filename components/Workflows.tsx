@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Check, ChevronRight, Truck, Scale, MapPin, ClipboardCheck, ArrowRight, Wand2, Calculator, Save, Loader2, Calendar, History, Layers, Info, Sparkles } from 'lucide-react';
 import { predictProjectWaste } from '../services/geminiService';
+import { supabase } from '../lib/supabaseClient';
 
 // --- Shared Components ---
 
@@ -36,6 +37,7 @@ const Stepper = ({ currentStep, steps }: { currentStep: number; steps: string[] 
 export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel: () => void }> = ({ onComplete, onCancel }) => {
   const [step, setStep] = useState(1);
   const [isPredicting, setIsPredicting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
     type: 'Commercial Renovation',
@@ -101,6 +103,50 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
     }
     
     setIsPredicting(false);
+  };
+
+  const handleCreateProject = async () => {
+    setIsSaving(true);
+    try {
+      // 1. Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("No user logged in");
+
+      // 2. Insert Project
+      const { data: projectData, error: projectError } = await supabase
+        .from('projects')
+        .insert({
+          owner_id: user.id,
+          name: formData.name,
+          project_type: formData.type.includes('Commercial') ? 'Commercial' : 'Residential', // Simplified mapping
+          construction_phase: formData.phase.includes('Demolition') ? 'Demolition' : 'Construction',
+          gross_floor_area: parseInt(formData.area),
+          hazmat_status: formData.hazmat ? 'Potential' : 'Clear',
+          status: 'Active',
+          location: 'New Site (Pending)',
+          compliance_score: 95 // Start high
+        })
+        .select()
+        .single();
+
+      if (projectError) throw projectError;
+
+      // 3. Log Action
+      await supabase.from('audit_logs').insert({
+        user_id: user.id,
+        project_id: projectData.id,
+        action: 'Created New Project',
+        status: 'Verified',
+        user_role: 'manager'
+      });
+      
+      onComplete();
+    } catch (e) {
+      console.error(e);
+      alert("Failed to create project");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -332,9 +378,11 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
            </button>
          )}
          <button 
-           onClick={() => step < 3 ? setStep(step + 1) : onComplete()}
-           className="px-6 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800 font-medium transition-colors flex items-center"
+           onClick={() => step < 3 ? setStep(step + 1) : handleCreateProject()}
+           disabled={isSaving}
+           className="px-6 py-2 rounded-lg bg-slate-900 text-white hover:bg-slate-800 font-medium transition-colors flex items-center disabled:opacity-50"
          >
+           {isSaving ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
            {step < 3 ? 'Continue' : 'Create Project'}
            {step < 3 && <ArrowRight className="w-4 h-4 ml-2" />}
          </button>
@@ -387,13 +435,36 @@ export const WasteTrackingWorkflow: React.FC = () => {
     }
   }, [loadData.material]);
 
-  const generateManifest = () => {
+  const generateManifest = async () => {
     setLoading(true);
-    setTimeout(() => {
-      setManifestId(`MNF-${Math.floor(Math.random() * 10000)}`);
+    try {
+      // 1. Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Authentication required");
+
+      const newManifestId = `MNF-${Math.floor(Math.random() * 90000) + 10000}`;
+      
+      // 2. Insert to DB (Real Data for Tracking)
+      const { error } = await supabase.from('waste_manifests').insert({
+         manifest_number: newManifestId,
+         material: loadData.material,
+         weight: parseFloat(loadData.weight),
+         hauler: loadData.hauler,
+         destination: loadData.destination,
+         status: 'Pending', // Initial status
+         user_id: user.id
+      });
+
+      if (error) throw error;
+
+      setManifestId(newManifestId);
       setStep(3);
+    } catch (e) {
+      console.error(e);
+      alert("Error generating manifest. Check connection.");
+    } finally {
       setLoading(false);
-    }, 1500);
+    }
   };
 
   const handleReset = () => {
@@ -402,8 +473,8 @@ export const WasteTrackingWorkflow: React.FC = () => {
   };
 
   return (
-    <div className="max-w-xl mx-auto">
-      <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden">
+    <div className="max-w-xl mx-auto h-full">
+      <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden h-full flex flex-col">
         <div className="p-6 bg-slate-900 text-white flex justify-between items-center">
           <div>
             <h2 className="text-lg font-bold">New Waste Manifest</h2>
@@ -414,7 +485,7 @@ export const WasteTrackingWorkflow: React.FC = () => {
           </div>
         </div>
 
-        <div className="p-6">
+        <div className="p-6 flex-1 overflow-y-auto">
           <Stepper currentStep={step} steps={['Load Details', 'Logistics', 'Manifest']} />
 
           {step === 1 && (
@@ -547,6 +618,10 @@ export const WasteTrackingWorkflow: React.FC = () => {
                     <span className="text-slate-500">Hauler</span>
                     <span className="font-semibold truncate w-32 text-right">{loadData.hauler}</span>
                  </div>
+                 <div className="flex justify-between pt-2">
+                    <span className="text-slate-500">Status</span>
+                    <span className="font-bold text-amber-600 uppercase text-xs">Pending</span>
+                 </div>
               </div>
 
               <button onClick={handleReset} className="text-slate-500 hover:text-slate-800 text-sm font-medium">
@@ -569,7 +644,7 @@ export const WasteTrackingWorkflow: React.FC = () => {
                  disabled={loading}
                  className="flex-1 py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 shadow-md transition-all flex justify-center items-center"
                >
-                 {loading ? <span className="animate-pulse">Processing...</span> : step === 2 ? 'Generate Manifest' : 'Continue'}
+                 {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : step === 2 ? 'Generate Manifest' : 'Continue'}
                </button>
              </div>
            ) : (

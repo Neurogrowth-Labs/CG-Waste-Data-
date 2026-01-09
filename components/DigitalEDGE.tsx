@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { getEdgeAdvisory, analyzeConstructionPlan, predictEdgeBaselines } from '../services/geminiService';
 import { EdgeProject, EdgeMaterialStream, BimMaterial } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
 // --- Sub-components ---
 
@@ -102,57 +103,104 @@ const DigitalEDGE: React.FC = () => {
   const [planAnalysis, setPlanAnalysis] = useState<string | null>(null);
   const [isScanningPlan, setIsScanningPlan] = useState(false);
 
-  // --- Logic: Initialize Baseline with AI Forecast ---
+  // --- Logic: Initialize Baseline with AI Forecast & Save to DB ---
   const initializeBaseline = async () => {
     if (project.gross_floor_area <= 0) return;
     setIsForecasting(true);
 
     try {
+        const { data: { user } } = await supabase.auth.getUser();
+        
+        // 1. Forecast Data
         const forecast = await predictEdgeBaselines(project);
+        let finalStreams: any[] = [];
+        
         if (forecast && forecast.streams) {
-            const newStreams = forecast.streams.map((s: any, index: number) => ({
-                material_id: `ai-${index}`,
+            finalStreams = forecast.streams.map((s: any) => ({
                 material_type: s.material_type || 'Concrete',
                 category: s.category || 'Structure',
                 baseline_quantity_tons: s.baseline_quantity_tons || 0,
                 improved_quantity_tons: s.improved_quantity_tons || 0,
                 disposal_method: s.disposal_method || 'Landfill',
                 recovery_percentage: s.recovery_percentage || 0,
-                evidence_status: 'Pending',
-                source: 'Estimated' // AI Estimated
+                source: 'Estimated'
             }));
-            setStreams(newStreams);
-            setViewState('analysis');
         } else {
-             // Fallback if AI fails to format correctly
-             fallbackInitialize();
+             // Fallback Logic
+             const factor = project.project_type === 'Commercial' ? 0.08 : 0.05;
+             const total = project.gross_floor_area * factor;
+             finalStreams = [
+               { material_type: 'Concrete', category: 'Structure', baseline_quantity_tons: total * 0.5, improved_quantity_tons: total * 0.5, disposal_method: 'Landfill', recovery_percentage: 0, source: 'Estimated' },
+               { material_type: 'Steel', category: 'Structure', baseline_quantity_tons: total * 0.15, improved_quantity_tons: total * 0.15, disposal_method: 'Landfill', recovery_percentage: 0, source: 'Estimated' },
+               { material_type: 'Timber', category: 'Finish', baseline_quantity_tons: total * 0.1, improved_quantity_tons: total * 0.1, disposal_method: 'Landfill', recovery_percentage: 0, source: 'Estimated' }
+             ];
         }
+
+        // 2. Save Project to DB
+        if (user) {
+            const { data: projData, error: projError } = await supabase
+              .from('projects')
+              .insert({
+                owner_id: user.id,
+                name: project.project_name,
+                project_type: project.project_type,
+                location: project.location,
+                gross_floor_area: project.gross_floor_area,
+                construction_phase: project.construction_phase,
+                status: 'Active'
+              })
+              .select()
+              .single();
+
+            if (projError) throw projError;
+            
+            // Update local state with real ID
+            setProject(prev => ({ ...prev, project_id: projData.id }));
+
+            // 3. Save Streams to DB
+            const streamsWithId = finalStreams.map(s => ({
+              ...s,
+              project_id: projData.id,
+              evidence_status: 'Pending'
+            }));
+
+            const { data: streamData, error: streamError } = await supabase
+              .from('edge_material_streams')
+              .insert(streamsWithId)
+              .select();
+            
+            if (streamError) throw streamError;
+
+            // Map DB result to frontend types
+            const mappedStreams: EdgeMaterialStream[] = (streamData || []).map((s: any) => ({
+               material_id: s.id,
+               material_type: s.material_type,
+               category: s.category,
+               baseline_quantity_tons: s.baseline_quantity_tons,
+               improved_quantity_tons: s.improved_quantity_tons,
+               disposal_method: s.disposal_method,
+               recovery_percentage: s.recovery_percentage,
+               evidence_status: s.evidence_status,
+               source: s.source
+            }));
+            
+            setStreams(mappedStreams);
+            setViewState('analysis');
+        }
+
     } catch (error) {
-        console.error("Forecast failed", error);
-        fallbackInitialize();
+        console.error("Forecast/Save failed", error);
+        alert("Error saving project. Check console.");
     } finally {
         setIsForecasting(false);
     }
   };
 
-  const fallbackInitialize = () => {
-    // Simulate IFC EDGE Methodology: Waste generation factors
-    const factor = project.project_type === 'Commercial' ? 0.08 : 0.05; // ton/m2
-    const total = project.gross_floor_area * factor;
-
-    const newStreams: EdgeMaterialStream[] = [
-      { material_id: '1', material_type: 'Concrete', category: 'Structure', baseline_quantity_tons: total * 0.5, improved_quantity_tons: total * 0.5, disposal_method: 'Landfill', recovery_percentage: 0, evidence_status: 'Pending', source: 'Estimated' },
-      { material_id: '2', material_type: 'Steel', category: 'Structure', baseline_quantity_tons: total * 0.15, improved_quantity_tons: total * 0.15, disposal_method: 'Landfill', recovery_percentage: 0, evidence_status: 'Pending', source: 'Estimated' },
-      { material_id: '3', material_type: 'Brick', category: 'Envelope', baseline_quantity_tons: total * 0.25, improved_quantity_tons: total * 0.25, disposal_method: 'Landfill', recovery_percentage: 0, evidence_status: 'Pending', source: 'Estimated' },
-      { material_id: '4', material_type: 'Timber', category: 'Finish', baseline_quantity_tons: total * 0.1, improved_quantity_tons: total * 0.1, disposal_method: 'Landfill', recovery_percentage: 0, evidence_status: 'Pending', source: 'Estimated' },
-    ];
-    setStreams(newStreams);
-    setViewState('analysis');
-  };
-
-  const addStream = () => {
-    const newStream: EdgeMaterialStream = {
-      material_id: `manual-${Date.now()}`,
+  const addStream = async () => {
+    if (project.project_id === 'new') return;
+    
+    const newStream = {
+      project_id: project.project_id,
       material_type: 'Concrete',
       category: 'Structure',
       baseline_quantity_tons: 0,
@@ -162,10 +210,27 @@ const DigitalEDGE: React.FC = () => {
       evidence_status: 'Pending',
       source: 'Manual Input'
     };
-    setStreams([...streams, newStream]);
+
+    const { data, error } = await supabase.from('edge_material_streams').insert(newStream).select().single();
+    
+    if (data) {
+        const s: EdgeMaterialStream = {
+           material_id: data.id,
+           material_type: data.material_type,
+           category: data.category,
+           baseline_quantity_tons: data.baseline_quantity_tons,
+           improved_quantity_tons: data.improved_quantity_tons,
+           disposal_method: data.disposal_method,
+           recovery_percentage: data.recovery_percentage,
+           evidence_status: data.evidence_status,
+           source: data.source
+        };
+        setStreams([...streams, s]);
+    }
   };
 
-  const removeStream = (id: string) => {
+  const removeStream = async (id: string) => {
+    await supabase.from('edge_material_streams').delete().eq('id', id);
     setStreams(prev => prev.filter(s => s.material_id !== id));
   };
 
@@ -200,6 +265,7 @@ const DigitalEDGE: React.FC = () => {
     });
 
     // Update streams with BIM data - Only updates IMPROVED quantities
+    // In a real app, this would perform multiple DB updates
     setStreams(prev => prev.map(s => {
        if (s.material_type === 'Concrete') return { ...s, improved_quantity_tons: totalConcrete, source: 'BIM-Derived' };
        if (s.material_type === 'Steel') return { ...s, improved_quantity_tons: totalSteel, source: 'BIM-Derived' };
@@ -257,8 +323,15 @@ const DigitalEDGE: React.FC = () => {
   const score = calculateEfficiency();
   const target = project.edge_target_level === 'Zero Carbon' ? 100 : project.edge_target_level === 'Advanced' ? 40 : 20;
 
-  const updateStream = (id: string, field: keyof EdgeMaterialStream, value: any) => {
+  const updateStream = async (id: string, field: keyof EdgeMaterialStream, value: any) => {
+    // Optimistic Update
     setStreams(prev => prev.map(s => s.material_id === id ? { ...s, [field]: value } : s));
+    
+    // DB Update
+    // Note: Debouncing recommended for production inputs
+    if (field !== 'material_id' && field !== 'source' && field !== 'evidence_status') {
+        await supabase.from('edge_material_streams').update({ [field]: value }).eq('id', id);
+    }
   };
 
   const runAdvisory = async () => {
@@ -329,7 +402,7 @@ const DigitalEDGE: React.FC = () => {
                   {isForecasting ? (
                      <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Forecasting with Gemini...</>
                   ) : (
-                     <><Wand2 className="w-4 h-4 mr-2" /> Forecast Design Waste</>
+                     <><Wand2 className="w-4 h-4 mr-2" /> Forecast & Create Project</>
                   )}
                 </button>
              </div>

@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import { 
   ShieldCheck, Lock, Building2, UserCheck, FileCheck, Globe, 
-  ChevronRight, Check, AlertTriangle, Fingerprint, Smartphone, Mail
+  ChevronRight, Check, AlertTriangle, Fingerprint, Smartphone, Mail, Loader2
 } from 'lucide-react';
 import { User } from '../types';
+import { supabase } from '../lib/supabaseClient';
 
 interface AuthProps {
   onLogin: (user: User) => void;
@@ -28,6 +29,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   // Form State
   const [formData, setFormData] = useState({
@@ -41,34 +43,54 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     mfaMethod: 'app'
   });
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    // Simulate API call
-    setTimeout(() => {
-      onLogin({
-        name: 'Demo User',
-        email: formData.email || 'demo@cgwaste.com',
-        role: 'manager',
-        organization: 'Global Construction Inc.',
-        jurisdiction: 'International',
-        standards: ['ISO 14001', 'ISO 9001']
+    setError(null);
+    
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
       });
-    }, 1500);
+
+      if (error) throw error;
+      
+      // onLogin will be handled by the session listener in App.tsx
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Login failed');
+      setLoading(false);
+    }
   };
 
-  const handleSignupComplete = () => {
+  const handleSignupComplete = async () => {
     setLoading(true);
-    setTimeout(() => {
-      onLogin({
-        name: formData.fullName,
+    setError(null);
+
+    try {
+      const { data, error } = await supabase.auth.signUp({
         email: formData.email,
-        role: formData.role,
-        organization: formData.orgName,
-        jurisdiction: formData.jurisdiction,
-        standards: formData.standards
+        password: 'TemporaryPassword123!', // In a real app, ask for password in UI
+        options: {
+          data: {
+            full_name: formData.fullName,
+            role: formData.role,
+            organization: formData.orgName,
+            jurisdiction: formData.jurisdiction,
+            standards: formData.standards
+          }
+        }
       });
-    }, 2000);
+
+      if (error) throw error;
+      
+      // Auto-login happens on signup usually, App.tsx listener will catch it
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'Signup failed');
+      setLoading(false);
+    }
   };
 
   const toggleStandard = (id: string) => {
@@ -93,6 +115,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           </div>
           
           <form onSubmit={handleLogin} className="p-8 space-y-5">
+            {error && (
+              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center">
+                <AlertTriangle className="w-4 h-4 mr-2" />
+                {error}
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-slate-700 mb-1">Work Email</label>
               <div className="relative">
@@ -128,7 +156,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               disabled={loading}
               className="w-full bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center justify-center disabled:opacity-70"
             >
-              {loading ? 'Verifying Identity...' : 'Secure Login'}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Secure Login'}
             </button>
             
             <div className="text-center pt-2">
@@ -200,6 +228,12 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
         {/* Main Content */}
         <div className="flex-1 p-8 md:p-12 flex flex-col">
+          {error && (
+             <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center">
+               <AlertTriangle className="w-4 h-4 mr-2" />
+               {error}
+             </div>
+          )}
           <div className="flex-1">
             {step === 1 && (
               <div className="space-y-6 animate-fade-in">
@@ -402,7 +436,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               disabled={loading || (step === 1 && !formData.email)}
               className="bg-slate-900 text-white px-8 py-2 rounded-lg font-medium hover:bg-slate-800 flex items-center shadow-lg transition-transform active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {loading ? 'Finalizing...' : step === 4 ? 'Complete Onboarding' : 'Continue'}
+              {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : step === 4 ? 'Complete Onboarding' : 'Continue'}
               {!loading && step < 4 && <ChevronRight className="w-4 h-4 ml-2" />}
             </button>
           </div>

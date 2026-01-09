@@ -1,18 +1,51 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Layout from './components/Layout';
 import Dashboard from './components/Dashboard';
 import Intelligence from './components/Intelligence';
 import CreativeStudio from './components/CreativeStudio';
 import LiveAssistant from './components/LiveAssistant';
 import DigitalEDGE from './components/DigitalEDGE';
+import { RealtimeNotifications } from './components/RealtimeNotifications';
 import { ProjectSourceWorkflow, WasteTrackingWorkflow } from './components/Workflows';
 import { Auth } from './components/Auth';
 import { View, User } from './types';
-import { Mic, Plus, AlertTriangle, CheckCircle, AlertOctagon } from 'lucide-react';
+import { Mic, Plus, AlertTriangle, CheckCircle, AlertOctagon, Loader2, Truck, Clock, MapPin } from 'lucide-react';
+import { supabase } from './lib/supabaseClient';
 
 const ProjectsView = () => {
   const [showNewProject, setShowNewProject] = useState(false);
+  const [projects, setProjects] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Initial Fetch
+  useEffect(() => {
+    const fetchProjects = async () => {
+      const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+      if (!error && data) setProjects(data);
+      setLoading(false);
+    };
+    fetchProjects();
+
+    // Realtime Subscription
+    const channel = supabase.channel('projects-view-realtime')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'projects' },
+        (payload) => {
+           if (payload.eventType === 'INSERT') {
+             setProjects(prev => [payload.new, ...prev]);
+           } else if (payload.eventType === 'UPDATE') {
+             setProjects(prev => prev.map(p => p.id === payload.new.id ? payload.new : p));
+           } else if (payload.eventType === 'DELETE') {
+             setProjects(prev => prev.filter(p => p.id !== payload.old.id));
+           }
+        }
+      )
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, []); // Remove dependency on showNewProject as realtime handles inserts
 
   if (showNewProject) {
     return (
@@ -47,61 +80,52 @@ const ProjectsView = () => {
               <th className="p-4">Project Name</th>
               <th className="p-4">Location</th>
               <th className="p-4">Status</th>
-              <th className="p-4">Est. Waste</th>
+              <th className="p-4">Phase</th>
               <th className="p-4">HazMat Status</th>
               <th className="p-4">Compliance</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            <tr className="hover:bg-slate-50 transition-colors">
-              <td className="p-4 font-medium text-slate-900">Skyline Tower Phase 2</td>
-              <td className="p-4">New York, NY</td>
-              <td className="p-4"><span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">Active</span></td>
-              <td className="p-4">1,250 t</td>
-              <td className="p-4">
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-amber-100 text-amber-700">
-                   <AlertTriangle className="w-3 h-3 mr-1.5" />
-                   Potential
-                </span>
-              </td>
-              <td className="p-4">
-                 <div className="w-full bg-slate-200 rounded-full h-1.5 max-w-[100px] mb-1">
-                   <div className="bg-green-500 h-1.5 rounded-full" style={{width: '88%'}}></div>
-                 </div>
-                 <span className="text-xs">88%</span>
-              </td>
-            </tr>
-            <tr className="hover:bg-slate-50 transition-colors">
-              <td className="p-4 font-medium text-slate-900">Riverfront Park Demo</td>
-              <td className="p-4">London, UK</td>
-              <td className="p-4"><span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs font-medium">Planning</span></td>
-              <td className="p-4">450 t</td>
-              <td className="p-4">
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700">
-                   <AlertOctagon className="w-3 h-3 mr-1.5" />
-                   Detected
-                </span>
-              </td>
-              <td className="p-4 text-slate-400">-</td>
-            </tr>
-            <tr className="hover:bg-slate-50 transition-colors">
-              <td className="p-4 font-medium text-slate-900">Site Alpha Remediation</td>
-              <td className="p-4">Austin, TX</td>
-              <td className="p-4"><span className="px-2 py-1 bg-amber-100 text-amber-700 rounded-full text-xs font-medium">Audited</span></td>
-              <td className="p-4">80 t</td>
-              <td className="p-4">
-                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700">
-                   <CheckCircle className="w-3 h-3 mr-1.5" />
-                   Clear
-                </span>
-              </td>
-              <td className="p-4">
-                 <div className="w-full bg-slate-200 rounded-full h-1.5 max-w-[100px] mb-1">
-                   <div className="bg-amber-500 h-1.5 rounded-full" style={{width: '65%'}}></div>
-                 </div>
-                 <span className="text-xs">65%</span>
-              </td>
-            </tr>
+            {loading ? (
+              <tr><td colSpan={6} className="p-6 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" /></td></tr>
+            ) : projects.length === 0 ? (
+              <tr><td colSpan={6} className="p-6 text-center text-slate-400">No projects found. Create one to get started.</td></tr>
+            ) : (
+              projects.map(p => (
+                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="p-4 font-medium text-slate-900">{p.name}</td>
+                  <td className="p-4">{p.location || 'N/A'}</td>
+                  <td className="p-4">
+                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                       p.status === 'Active' ? 'bg-green-100 text-green-700' : 
+                       p.status === 'Planning' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
+                     }`}>{p.status}</span>
+                  </td>
+                  <td className="p-4">{p.construction_phase}</td>
+                  <td className="p-4">
+                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                      p.hazmat_status === 'Detected' ? 'bg-red-100 text-red-700' :
+                      p.hazmat_status === 'Potential' ? 'bg-amber-100 text-amber-700' :
+                      'bg-green-100 text-green-700'
+                    }`}>
+                       {p.hazmat_status === 'Detected' ? <AlertOctagon className="w-3 h-3 mr-1.5" /> : 
+                        p.hazmat_status === 'Potential' ? <AlertTriangle className="w-3 h-3 mr-1.5" /> : 
+                        <CheckCircle className="w-3 h-3 mr-1.5" />}
+                       {p.hazmat_status}
+                    </span>
+                  </td>
+                  <td className="p-4">
+                     <div className="w-full bg-slate-200 rounded-full h-1.5 max-w-[100px] mb-1">
+                       <div className={`h-1.5 rounded-full ${
+                         (p.compliance_score || 0) >= 80 ? 'bg-green-500' : 
+                         (p.compliance_score || 0) >= 50 ? 'bg-amber-500' : 'bg-red-500'
+                       }`} style={{width: `${p.compliance_score || 0}%`}}></div>
+                     </div>
+                     <span className="text-xs">{p.compliance_score || 0}%</span>
+                  </td>
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>
@@ -109,37 +133,188 @@ const ProjectsView = () => {
   );
 };
 
-const TrackingView = () => (
-   <div className="flex flex-col h-full">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-slate-800">Waste Tracking</h2>
-        <p className="text-slate-500">Create digital manifests and track live logistics.</p>
-      </div>
-      <div className="flex-1 flex items-center justify-center">
-         <div className="w-full">
-           <WasteTrackingWorkflow />
-         </div>
-      </div>
-   </div>
-);
+const TrackingView = () => {
+   const [manifests, setManifests] = useState<any[]>([]);
+   const [loading, setLoading] = useState(true);
+
+   useEffect(() => {
+     // Fetch existing manifests
+     const fetchManifests = async () => {
+       const { data } = await supabase.from('waste_manifests').select('*').order('created_at', { ascending: false });
+       if (data) setManifests(data);
+       setLoading(false);
+     };
+     fetchManifests();
+
+     // Realtime Subscription for Status Updates
+     const channel = supabase.channel('manifests-view-realtime')
+       .on(
+         'postgres_changes',
+         { event: '*', schema: 'public', table: 'waste_manifests' },
+         (payload) => {
+            if (payload.eventType === 'INSERT') {
+              setManifests(prev => [payload.new, ...prev]);
+            } else if (payload.eventType === 'UPDATE') {
+              setManifests(prev => prev.map(m => m.id === payload.new.id ? payload.new : m));
+            }
+         }
+       )
+       .subscribe();
+
+      return () => { supabase.removeChannel(channel); };
+   }, []);
+
+   return (
+    <div className="flex flex-col h-full space-y-8">
+       <div className="flex-none">
+         <h2 className="text-2xl font-bold text-slate-800">Waste Tracking</h2>
+         <p className="text-slate-500">Create digital manifests and track live logistics.</p>
+       </div>
+       
+       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 h-full overflow-hidden">
+          {/* Left: Wizard */}
+          <div className="flex-none lg:flex-1 overflow-y-auto">
+             <WasteTrackingWorkflow />
+          </div>
+
+          {/* Right: Live Board */}
+          <div className="flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-[600px] lg:h-auto">
+             <div className="p-4 border-b border-slate-200 bg-slate-50 flex justify-between items-center">
+                <div className="flex items-center space-x-2">
+                   <Truck className="w-5 h-5 text-slate-600" />
+                   <h3 className="font-bold text-slate-800">Live Logistics Board</h3>
+                </div>
+                <div className="flex items-center space-x-1 text-xs text-green-600">
+                   <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                   <span className="font-medium">Real-time</span>
+                </div>
+             </div>
+             <div className="flex-1 overflow-y-auto">
+                {loading ? (
+                   <div className="p-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+                ) : manifests.length === 0 ? (
+                   <div className="p-8 text-center text-slate-400 text-sm">No active manifests found.</div>
+                ) : (
+                   <table className="w-full text-sm text-left">
+                      <thead className="bg-white text-slate-500 font-medium sticky top-0 shadow-sm z-10">
+                         <tr>
+                            <th className="px-4 py-3">Manifest ID</th>
+                            <th className="px-4 py-3">Material</th>
+                            <th className="px-4 py-3">Hauler</th>
+                            <th className="px-4 py-3">Status</th>
+                         </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                         {manifests.map(m => (
+                            <tr key={m.id} className="hover:bg-slate-50 transition-colors">
+                               <td className="px-4 py-3 font-mono text-xs font-medium text-slate-700">
+                                  {m.manifest_number}
+                                  <div className="text-[10px] text-slate-400 mt-0.5 flex items-center">
+                                    <Clock className="w-3 h-3 mr-1" />
+                                    {new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                  </div>
+                               </td>
+                               <td className="px-4 py-3">
+                                  <span className="font-medium">{m.material}</span>
+                                  <div className="text-xs text-slate-500">{m.weight} tons</div>
+                               </td>
+                               <td className="px-4 py-3">
+                                  <div className="text-xs text-slate-600 truncate max-w-[120px]" title={m.hauler}>{m.hauler}</div>
+                                  <div className="text-[10px] text-slate-400 flex items-center mt-0.5">
+                                     <MapPin className="w-3 h-3 mr-1" /> {m.destination?.split(' ')[0]}...
+                                  </div>
+                               </td>
+                               <td className="px-4 py-3">
+                                  <span className={`inline-flex items-center px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wide ${
+                                     m.status === 'Verified' ? 'bg-green-100 text-green-700' :
+                                     m.status === 'Rejected' ? 'bg-red-100 text-red-700' :
+                                     m.status === 'In Transit' ? 'bg-blue-100 text-blue-700' :
+                                     'bg-slate-100 text-slate-600'
+                                  }`}>
+                                     {m.status}
+                                  </span>
+                               </td>
+                            </tr>
+                         ))}
+                      </tbody>
+                   </table>
+                )}
+             </div>
+          </div>
+       </div>
+    </div>
+   );
+};
 
 const App: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [showLive, setShowLive] = useState(false);
+  const [loadingSession, setLoadingSession] = useState(true);
 
-  const handleLogin = (user: User) => {
-    setCurrentUser(user);
-    // You could set view based on role here if needed
+  useEffect(() => {
+    // 1. Check for active session on load
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user) {
+        await fetchProfile(session.user.id, session.user.email!);
+      } else {
+        setLoadingSession(false);
+      }
+    };
+
+    checkSession();
+
+    // 2. Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (event === 'SIGNED_IN' && session?.user) {
+        await fetchProfile(session.user.id, session.user.email!);
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        setCurrentView(View.DASHBOARD);
+      }
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const fetchProfile = async (userId: string, email: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (data) {
+        setCurrentUser({
+          name: data.full_name || 'User',
+          email: email,
+          role: data.role || 'manager',
+          organization: data.organization || '',
+          jurisdiction: data.jurisdiction || '',
+          standards: data.standards || []
+        });
+      }
+    } catch (e) {
+      console.error("Profile fetch error", e);
+    } finally {
+      setLoadingSession(false);
+    }
   };
 
-  const handleLogout = () => {
-    setCurrentUser(null);
-    setCurrentView(View.DASHBOARD);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
+
+  if (loadingSession) {
+    return <div className="h-screen w-screen flex items-center justify-center bg-slate-50">
+      <Loader2 className="w-10 h-10 text-green-600 animate-spin" />
+    </div>;
+  }
 
   if (!currentUser) {
-    return <Auth onLogin={handleLogin} />;
+    return <Auth onLogin={() => {}} />;
   }
 
   const renderContent = () => {
@@ -157,6 +332,9 @@ const App: React.FC = () => {
   return (
     <Layout currentView={currentView} onNavigate={setCurrentView} user={currentUser} onLogout={handleLogout}>
       {renderContent()}
+      
+      {/* Real-time Notifications Overlay */}
+      <RealtimeNotifications />
 
       {/* Floating Action Button for Live Assistant */}
       <button 
