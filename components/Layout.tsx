@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { View, User } from '../types';
-import { LayoutDashboard, Building2, Activity, Brain, Palette, Settings, Menu, X, Globe, LogOut } from 'lucide-react';
+import { LayoutDashboard, Building2, Activity, Brain, Palette, Settings, Menu, X, Globe, LogOut, Leaf, ChevronRight } from 'lucide-react';
 
 interface LayoutProps {
   currentView: View;
@@ -18,6 +18,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
     { id: View.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
     { id: View.PROJECTS, label: 'Projects', icon: Building2 },
     { id: View.TRACKING, label: 'Waste Tracking', icon: Activity },
+    { id: View.EDGE, label: 'EDGE Consultant', icon: Leaf },
     { id: View.INTELLIGENCE, label: 'Intelligence', icon: Brain },
     { id: View.CREATIVE, label: 'Creative Studio', icon: Palette },
     // { id: View.SETTINGS, label: 'Settings', icon: Settings },
@@ -80,6 +81,12 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
             <button onClick={onLogout} title="Logout">
               <LogOut className="w-4 h-4 text-slate-400 cursor-pointer hover:text-white" />
             </button>
+          </div>
+          
+          {/* App Verification Links - Mandatory for Google Cloud compliance */}
+          <div className="mt-4 px-4 flex flex-col space-y-2 text-[10px] text-slate-500 border-t border-slate-800 pt-4">
+             <a href="#" className="hover:text-slate-300 flex items-center"><ChevronRight className="w-3 h-3 mr-1"/> Privacy Policy</a>
+             <a href="#" className="hover:text-slate-300 flex items-center"><ChevronRight className="w-3 h-3 mr-1"/> Terms of Service</a>
           </div>
         </div>
       </div>

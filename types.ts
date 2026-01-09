@@ -5,6 +5,7 @@ export enum View {
   TRACKING = 'TRACKING',
   INTELLIGENCE = 'INTELLIGENCE',
   CREATIVE = 'CREATIVE',
+  EDGE = 'EDGE',
   SETTINGS = 'SETTINGS'
 }
 
@@ -52,6 +53,41 @@ export interface User {
   organization: string;
   jurisdiction: string;
   standards: string[];
+}
+
+// --- EDGE-Specific Data Models (Part 1: Core Entity Architecture) ---
+
+export interface EdgeProject {
+  project_id: string;
+  project_name: string;
+  location: string; // Country, City, GPS
+  project_type: 'Residential' | 'Commercial' | 'Mixed' | 'Hospitality' | 'Retail';
+  edge_target_level: 'Certified' | 'Advanced' | 'Zero Carbon';
+  gross_floor_area: number; // m2
+  construction_phase: 'Design' | 'Construction' | 'Demolition';
+  start_date?: string;
+  end_date?: string;
+}
+
+export interface EdgeMaterialStream {
+  material_id: string;
+  material_type: 'Concrete' | 'Steel' | 'Timber' | 'Glass' | 'Plastics' | 'Brick' | 'Excavation' | 'Hazardous';
+  category: 'Structure' | 'Envelope' | 'Finish' | 'Site'; 
+  baseline_quantity_tons: number; // Locked EDGE Baseline (Audit Safe)
+  improved_quantity_tons: number; // Actual / Proposed Strategy
+  disposal_method: 'Landfill' | 'Reuse' | 'Recycle';
+  recovery_percentage: number;
+  evidence_status: 'Pending' | 'Uploaded' | 'Verified';
+  source?: 'Estimated' | 'BIM-Derived' | 'Measured' | 'Manual Input'; // Track origin of data
+}
+
+export interface BimMaterial {
+  id: string;
+  element_name: string; // e.g. "Basic Wall: Generic 200mm"
+  bim_quantity: number;
+  unit: 'm3' | 'm2' | 'kg';
+  edge_category: string; // Mapped category
+  estimated_waste_rate: number; // %
 }
 
 // Window augmentation for AudioContext

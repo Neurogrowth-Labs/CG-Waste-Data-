@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
-import { Check, ChevronRight, Truck, Scale, MapPin, ClipboardCheck, ArrowRight, Wand2, Calculator, Save, Loader2, Calendar, History, Layers, Info } from 'lucide-react';
+import { Check, ChevronRight, Truck, Scale, MapPin, ClipboardCheck, ArrowRight, Wand2, Calculator, Save, Loader2, Calendar, History, Layers, Info, Sparkles } from 'lucide-react';
+import { predictProjectWaste } from '../services/geminiService';
 
 // --- Shared Components ---
 
@@ -57,90 +59,48 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
     }
   }, [formData.type]);
 
-  const handlePredict = () => {
+  const handlePredict = async () => {
     setIsPredicting(true);
     setAiReasoning([]);
     
-    // Simulate AI calculation delay
-    setTimeout(() => {
-      // --- AI PREDICTION ENGINE ---
-      
-      const area = parseInt(formData.area) || 0;
-      const duration = parseInt(formData.duration) || 1;
-      const year = parseInt(formData.buildingYear) || 2000;
-      let reasons: string[] = [];
-      
-      // 1. Base Intensity by Phase (Tonnes per 1,000 sq ft)
-      let intensity = 0;
-      let ratios = { concrete: 0.33, metal: 0.33, wood: 0.33 };
-
-      switch (formData.phase) {
-        case 'Demolition':
-          intensity = 150; 
-          ratios = { concrete: 0.70, metal: 0.20, wood: 0.10 };
-          reasons.push("Phase 'Demolition' sets high waste intensity baseline.");
-          break;
-        case 'Structural':
-          intensity = 60;
-          ratios = { concrete: 0.50, metal: 0.30, wood: 0.20 };
-          reasons.push("Phase 'Structural' emphasizes concrete and steel offcuts.");
-          break;
-        case 'Fit-out':
-          intensity = 25; 
-          ratios = { concrete: 0.10, metal: 0.40, wood: 0.50 };
-          reasons.push("Phase 'Fit-out' reduces total volume, increases wood/packaging mix.");
-          break;
-        default:
-          intensity = 30;
-      }
-
-      // 2. Building Age Factor
-      let ageMultiplier = 1.0;
-      if (year < 1980) {
-        ageMultiplier = 1.25;
-        ratios.concrete += 0.1; // Older buildings have more heavy masonry
-        ratios.wood -= 0.1;
-        reasons.push(`Building Age (${year}): Pre-1980 construction adds +25% density mass.`);
-        
-        // Auto-detect Hazmat risk
-        if (year < 1990 && !formData.hazmat) {
-             setFormData(prev => ({...prev, hazmat: true}));
-             reasons.push("Context Risk: Construction date < 1990 flags potential Asbestos/Lead.");
-        }
-      } else {
-        reasons.push(`Modern construction (${year}) implies optimized material usage.`);
-      }
-
-      // 3. Historical Data Correlation
-      let historyMultiplier = 1.0;
-      if (formData.historicalData === 'similar_urban') {
-        historyMultiplier = 0.92;
-        reasons.push("Historical Data: Similar urban projects suggest 8% efficiency gain.");
-      } else if (formData.historicalData === 'similar_industrial') {
-        historyMultiplier = 1.05;
-        reasons.push("Historical Data: Industrial benchmarks suggest 5% volume increase.");
-      }
-
-      // 4. Calculate Final Volume
-      const durationFactor = 1 + (duration * 0.005); // Minor drift for longer projects
-      const totalEstWaste = (area / 1000) * intensity * ageMultiplier * historyMultiplier * durationFactor;
-
-      // Normalize ratios if they drifted
-      const totalRatio = ratios.concrete + ratios.metal + ratios.wood;
-      ratios.concrete /= totalRatio;
-      ratios.metal /= totalRatio;
-      ratios.wood /= totalRatio;
+    try {
+      // Use Gemini for intelligent prediction
+      const prediction = await predictProjectWaste({
+         name: formData.name,
+         type: formData.type,
+         phase: formData.phase,
+         year: formData.buildingYear,
+         area: formData.area,
+         duration: formData.duration,
+         historicalData: formData.historicalData
+      });
 
       setFormData(prev => ({
         ...prev,
-        concrete: Math.round(totalEstWaste * ratios.concrete),
-        metal: Math.round(totalEstWaste * ratios.metal),
-        wood: Math.round(totalEstWaste * ratios.wood),
+        concrete: prediction.concrete || 0,
+        metal: prediction.metal || 0,
+        wood: prediction.wood || 0,
+        hazmat: prediction.hazmat || false,
       }));
-      
-      setAiReasoning(reasons);
-      setIsPredicting(false);
-    }, 1200);
+      setAiReasoning(prediction.reasoning || ["AI analysis complete based on project parameters."]);
+
+    } catch (error) {
+       console.error("AI Prediction failed, using fallback", error);
+       // Heuristic Fallback
+       const area = parseInt(formData.area) || 0;
+       const intensity = formData.phase === 'Demolition' ? 150 : 30; // t/1000sqft
+       const base = (area / 1000) * intensity;
+       setFormData(prev => ({
+          ...prev,
+          concrete: Math.round(base * 0.5),
+          metal: Math.round(base * 0.3),
+          wood: Math.round(base * 0.2),
+          hazmat: parseInt(formData.buildingYear) < 1990
+       }));
+       setAiReasoning(["Offline estimation used (AI unavailable)."]);
+    }
+    
+    setIsPredicting(false);
   };
 
   return (
@@ -264,7 +224,7 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
                  className="flex items-center text-xs font-bold text-white bg-gradient-to-r from-purple-500 to-indigo-600 px-4 py-2 rounded-lg hover:shadow-lg hover:scale-105 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                >
                  {isPredicting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Wand2 className="w-4 h-4 mr-2" />}
-                 {isPredicting ? 'Analyzing...' : 'Run AI Prediction'}
+                 {isPredicting ? 'Forecasting...' : 'Run AI Forecast'}
                </button>
             </div>
             
@@ -306,7 +266,7 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
             {aiReasoning.length > 0 && (
                 <div className="bg-indigo-50 border border-indigo-100 rounded-lg p-4">
                     <h4 className="text-xs font-bold text-indigo-800 uppercase flex items-center mb-2">
-                        <Info className="w-4 h-4 mr-1.5" /> Prediction Insights
+                        <Sparkles className="w-4 h-4 mr-1.5" /> AI Prediction Insights
                     </h4>
                     <ul className="space-y-1.5">
                         {aiReasoning.map((reason, idx) => (
@@ -328,7 +288,7 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
                <div>
                   <label className="block text-sm font-medium text-slate-900">Hazardous Material Risk</label>
                   <p className="text-xs text-slate-500">
-                    {formData.hazmat ? "Flagged: Age or context indicates Asbestos/Lead risk." : "No significant risk detected."}
+                    {formData.hazmat ? "Flagged by AI: Age or context indicates Asbestos/Lead risk." : "No significant risk detected."}
                   </p>
                </div>
             </div>
@@ -398,6 +358,35 @@ export const WasteTrackingWorkflow: React.FC = () => {
     destination: 'City Recycling Center #4 (3.2 miles)'
   });
 
+  // Smart Defaults for Logistics based on Material
+  useEffect(() => {
+    if (loadData.material === 'Concrete') {
+      setLoadData(prev => ({
+        ...prev, 
+        destination: 'City Recycling Center #4 (3.2 miles)',
+        hauler: 'EcoHaul Logistics (Preferred)'
+      }));
+    } else if (loadData.material === 'Metal') {
+      setLoadData(prev => ({
+        ...prev, 
+        destination: 'Metro Scrap Yard (8.1 miles)',
+        hauler: 'Site Fleet #4'
+      }));
+    } else if (loadData.material === 'Hazardous') { 
+       setLoadData(prev => ({
+        ...prev, 
+        destination: 'Specialized HazMat Facility (45 miles)',
+        hauler: 'Certified HazMat Transport'
+      }));
+    } else if (loadData.material === 'Wood') {
+      setLoadData(prev => ({
+        ...prev, 
+        destination: 'Bio-Mass Energy Plant (12 miles)',
+        hauler: 'Green Waste Services'
+      }));
+    }
+  }, [loadData.material]);
+
   const generateManifest = () => {
     setLoading(true);
     setTimeout(() => {
@@ -433,7 +422,7 @@ export const WasteTrackingWorkflow: React.FC = () => {
                <div>
                  <label className="block text-sm font-medium text-slate-700 mb-2">Material Stream</label>
                  <div className="grid grid-cols-2 gap-3">
-                    {['Concrete', 'Metal', 'Mixed', 'Wood'].map(m => (
+                    {['Concrete', 'Metal', 'Hazardous', 'Wood'].map(m => (
                       <button 
                         key={m}
                         onClick={() => setLoadData({...loadData, material: m})}
@@ -480,7 +469,12 @@ export const WasteTrackingWorkflow: React.FC = () => {
                 <div className="flex items-start space-x-3 mb-4">
                    <Truck className="w-5 h-5 text-slate-500 mt-0.5" />
                    <div className="flex-1">
-                      <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Assigned Hauler</label>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs font-semibold text-slate-500 uppercase">Assigned Hauler</label>
+                        <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded flex items-center">
+                          <Sparkles className="w-3 h-3 mr-1" /> Smart Default
+                        </span>
+                      </div>
                       <select 
                         value={loadData.hauler}
                         onChange={e => setLoadData({...loadData, hauler: e.target.value})}
@@ -489,13 +483,20 @@ export const WasteTrackingWorkflow: React.FC = () => {
                         <option>EcoHaul Logistics (Preferred)</option>
                         <option>City Waste Services</option>
                         <option>Site Fleet #4</option>
+                        <option>Certified HazMat Transport</option>
+                        <option>Green Waste Services</option>
                       </select>
                    </div>
                 </div>
                 <div className="flex items-start space-x-3">
                    <MapPin className="w-5 h-5 text-slate-500 mt-0.5" />
                    <div className="flex-1">
-                      <label className="block text-xs font-semibold text-slate-500 uppercase mb-1">Destination</label>
+                      <div className="flex justify-between items-center mb-1">
+                        <label className="block text-xs font-semibold text-slate-500 uppercase">Destination</label>
+                        <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded flex items-center">
+                          <Sparkles className="w-3 h-3 mr-1" /> Best Match
+                        </span>
+                      </div>
                       <select 
                         value={loadData.destination}
                         onChange={e => setLoadData({...loadData, destination: e.target.value})}
@@ -504,6 +505,9 @@ export const WasteTrackingWorkflow: React.FC = () => {
                          <option>City Recycling Center #4 (3.2 miles)</option>
                          <option>Regional Landfill (15.4 miles)</option>
                          <option>Recovery Yard B (8.1 miles)</option>
+                         <option>Specialized HazMat Facility (45 miles)</option>
+                         <option>Metro Scrap Yard (8.1 miles)</option>
+                         <option>Bio-Mass Energy Plant (12 miles)</option>
                       </select>
                       <p className="text-xs text-green-600 mt-1 flex items-center">
                         <Check className="w-3 h-3 mr-1" /> Approved Facility

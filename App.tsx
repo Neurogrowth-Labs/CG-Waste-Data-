@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import Intelligence from './components/Intelligence';
 import CreativeStudio from './components/CreativeStudio';
 import LiveAssistant from './components/LiveAssistant';
+import DigitalEDGE from './components/DigitalEDGE';
 import { ProjectSourceWorkflow, WasteTrackingWorkflow } from './components/Workflows';
 import { Auth } from './components/Auth';
 import { View, User } from './types';
@@ -146,6 +147,7 @@ const App: React.FC = () => {
       case View.DASHBOARD: return <Dashboard initialRole={currentUser.role} />;
       case View.INTELLIGENCE: return <Intelligence />;
       case View.CREATIVE: return <CreativeStudio />;
+      case View.EDGE: return <DigitalEDGE />;
       case View.PROJECTS: return <ProjectsView />;
       case View.TRACKING: return <TrackingView />;
       default: return <div className="text-slate-400">Section under development</div>;
