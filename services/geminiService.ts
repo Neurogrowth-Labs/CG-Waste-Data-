@@ -200,7 +200,7 @@ export const analyzeConstructionPlan = async (base64Image: string, mimeType: str
     Based on the layout, typology, and visible elements, provide a **Net Zero Readiness Report** with specific technical interventions to meet EDGE Advanced standards (>40% savings) or Zero Carbon.
 
     1. **💧 Water Efficiency (>30% Reduction Required)**:
-       - **Low-Flow Fixtures:** Recommend precise flow rates (e.g., Showerheads < 6 L/min, Taps < 4 L/min, WCs < 3 L/flush dual flush).
+       - **Low-Flow Fixtures:** Recommend precise flow rates to hit 30% savings (e.g., Showerheads < 6 L/min, Taps < 4 L/min, WCs < 3 L/flush dual flush).
        - **Recycling Systems:** Assess roof area for Rainwater Harvesting potential. Suggest Greywater Recycling for irrigation/flushing if the layout allows for separate plumbing stacks.
        - **Landscaping:** If exterior is visible, recommend xeriscaping or native drought-resistant plants to reduce irrigation demand by 50%.
 

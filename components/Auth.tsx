@@ -127,11 +127,32 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       alert(`${type === 'terms' ? 'Terms of Service' : 'Privacy Policy'} content would appear here in a production environment.`);
   };
 
+  // Background Pattern Styles (Data Mesh / Hexagon Grid)
+  const backgroundStyle = {
+    backgroundColor: '#0f172a',
+    backgroundImage: `radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%)`,
+    position: 'relative' as const,
+  };
+
+  const overlayPattern = {
+      position: 'absolute' as const,
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundImage: `url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%239C92AC' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")`,
+      zIndex: 0
+  };
+
   if (mode === 'login') {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4">
-        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col">
-          <div className="p-8 bg-slate-50 border-b border-slate-100 text-center">
+      <div style={backgroundStyle} className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+        <div style={overlayPattern}></div>
+        {/* Organic Green Glow to represent Recycling/Sustainability */}
+        <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-green-900/20 blur-[120px] rounded-full pointer-events-none"></div>
+
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col z-10 border border-slate-700/30">
+          <div className="p-8 bg-slate-50/80 border-b border-slate-100 text-center">
             <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-600/20 transform hover:scale-105 transition-transform duration-300">
                <svg viewBox="0 0 24 24" className="w-9 h-9 text-white" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 3L3 8.2V15.8L12 21L21 15.8V8.2L12 3Z" strokeLinecap="round" strokeLinejoin="round"/>
@@ -184,7 +205,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center justify-center disabled:opacity-70"
+              className="w-full bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center justify-center disabled:opacity-70 shadow-lg"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Secure Login'}
             </button>
@@ -240,12 +261,16 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
   // SIGN UP / ONBOARDING WIZARD
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[500px]">
+    <div style={backgroundStyle} className="min-h-screen flex flex-col items-center justify-center p-4 relative">
+       <div style={overlayPattern}></div>
+      <div className="w-full max-w-3xl bg-white/95 backdrop-blur rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[500px] z-10">
         
         {/* Sidebar / Progress */}
-        <div className="bg-slate-900 w-full md:w-64 p-8 flex flex-col justify-between text-white">
-          <div>
+        <div className="bg-slate-900 w-full md:w-64 p-8 flex flex-col justify-between text-white relative overflow-hidden">
+          {/* Subtle grid for sidebar too */}
+          <div className="absolute inset-0 opacity-10" style={{backgroundImage: overlayPattern.backgroundImage}}></div>
+          
+          <div className="relative z-10">
             <div className="flex items-center space-x-3 mb-10">
               <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg">
                   <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
@@ -282,7 +307,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             </nav>
           </div>
           
-          <div className="mt-8 pt-6 border-t border-slate-800">
+          <div className="mt-8 pt-6 border-t border-slate-800 relative z-10">
              <p className="text-xs text-slate-400 leading-relaxed">
                This secure onboarding process ensures compliance with ISO 27001 Access Control policies.
              </p>
@@ -290,7 +315,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-8 md:p-12 flex flex-col">
+        <div className="flex-1 p-8 md:p-12 flex flex-col bg-slate-50">
           {error && (
              <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center">
                <AlertTriangle className="w-4 h-4 mr-2" />
@@ -494,8 +519,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           </div>
         </div>
       </div>
-      <div className="mt-8 text-center">
-         <p className="text-sm text-slate-500">Already have an account? <button onClick={() => setMode('login')} className="text-green-600 font-bold hover:underline">Log in</button></p>
+      <div className="mt-8 text-center relative z-10">
+         <p className="text-sm text-slate-300">Already have an account? <button onClick={() => setMode('login')} className="text-green-400 font-bold hover:underline">Log in</button></p>
       </div>
     </div>
   );
