@@ -195,26 +195,28 @@ export const predictEdgeBaselines = async (projectDetails: any) => {
 export const analyzeConstructionPlan = async (base64Image: string, mimeType: string) => {
   const ai = getClient();
   const prompt = `
-    Act as an expert IFC EDGE Green Building Consultant. Analyze this architectural construction plan/drawing.
+    Act as an expert IFC EDGE Green Building Consultant & Architect. Analyze this architectural construction plan/drawing.
     
-    Based on the layout, typology, and visible elements, provide a **Net Zero Readiness Report** with specific technical interventions to meet EDGE Advanced standards:
+    Based on the layout, typology, and visible elements, provide a **Net Zero Readiness Report** with specific technical interventions to meet EDGE Advanced standards (>40% savings) or Zero Carbon.
 
-    1. **💧 Water Efficiency (>30% Reduction)**:
-       - Recommend specific low-flow fixture ratings (e.g., L/min for taps, L/flush for WCs).
-       - Identify potential for Greywater Recycling or Rainwater Harvesting based on the roof/site layout visible.
-       - Suggest drought-tolerant landscaping if exterior areas are shown.
+    1. **💧 Water Efficiency (>30% Reduction Required)**:
+       - **Low-Flow Fixtures:** Recommend precise flow rates (e.g., Showerheads < 6 L/min, Taps < 4 L/min, WCs < 3 L/flush dual flush).
+       - **Recycling Systems:** Assess roof area for Rainwater Harvesting potential. Suggest Greywater Recycling for irrigation/flushing if the layout allows for separate plumbing stacks.
+       - **Landscaping:** If exterior is visible, recommend xeriscaping or native drought-resistant plants to reduce irrigation demand by 50%.
 
-    2. **⚡ Energy Efficiency (>30% Reduction)**:
-       - Analyze the window-to-wall ratio (WWR) and suggest passive design strategies (shading devices, orientation optimization).
-       - Recommend active systems suitable for this building type (e.g., VRF cooling, natural ventilation strategies, solar PV potential).
-       - Suggest lighting power density targets.
+    2. **⚡ Energy Efficiency (>30% Reduction Required)**:
+       - **Window Positioning & Daylighting:** Analyze the current window placement. Suggest optimized positioning (e.g., increased glazing on North/South for light without heat gain, reduced East/West glazing).
+       - **Passive Cooling:** Suggest cross-ventilation strategies based on the floor plan layout.
+       - **Flood Prevention:** If the site context suggests, recommend raising window sill heights or using water-resistant materials on ground floors.
+       - **Active Systems:** Recommend efficient HVAC (e.g., VRF COP > 3.5) and LED lighting (LPD < 6 W/m²).
 
     3. **🧱 Zero Carbon Materials**:
-       - Identify conventional materials likely implied by this plan (e.g., RCC frame, brick infill).
-       - **Suggest Substitutes:** Recommend specific Zero Carbon or Low Embodied Carbon alternatives available globally (e.g., Cross Laminated Timber (CLT), Geopolymer Concrete, Compressed Stabilized Earth Blocks (CSEB), Hempcrete).
-       - Highlight one "Hero Material" change that would have the biggest carbon impact for this specific design.
+       - **Material Substitution:** Identify conventional materials (e.g., concrete slab). Suggest specific **Zero Carbon alternatives**:
+         - *Floor:* Polished Concrete with 50% GGBS or Recycled Timber.
+         - *Walls:* Hempcrete blocks, Compressed Stabilized Earth Blocks (CSEB), or Cross Laminated Timber (CLT).
+       - **HERO MATERIAL:** Identify the **single most impactful substitution** for this specific design that would drastically reduce embodied carbon (e.g., "Replacing the RCC frame with a Timber Hybrid structure").
 
-    Format the response as a structured Markdown technical report.
+    Format the response as a structured Markdown technical report with bold headings and bullet points for readability.
   `;
 
   const response = await ai.models.generateContent({

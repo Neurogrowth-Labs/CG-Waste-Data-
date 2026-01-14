@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { View, User } from '../types';
-import { LayoutDashboard, Building2, Activity, Brain, Palette, Settings, Menu, X, Globe, LogOut, Leaf, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Building2, Activity, Brain, Palette, Settings, Menu, X, LogOut, Leaf, ChevronRight } from 'lucide-react';
 
 interface LayoutProps {
   currentView: View;
@@ -21,8 +21,13 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
     { id: View.EDGE, label: 'EDGE Consultant', icon: Leaf },
     { id: View.INTELLIGENCE, label: 'Intelligence', icon: Brain },
     { id: View.CREATIVE, label: 'Creative Studio', icon: Palette },
-    // { id: View.SETTINGS, label: 'Settings', icon: Settings },
+    { id: View.SETTINGS, label: 'Settings', icon: Settings },
   ];
+
+  const handleLegalNavigation = (e: React.MouseEvent) => {
+    e.preventDefault();
+    onNavigate(View.SETTINGS);
+  };
 
   return (
     <div className="flex h-screen bg-slate-50 text-slate-900">
@@ -38,11 +43,20 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
       {/* Sidebar */}
       <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 fixed md:relative z-40 w-64 h-full bg-slate-900 text-white flex flex-col`}>
         <div className="p-6 flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center">
-              <Globe className="w-5 h-5 text-white" />
+          <div className="flex items-center space-x-3">
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-900/20">
+              {/* Geometric Cube/Hexagon Logo */}
+              <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 3L3 8.2V15.8L12 21L21 15.8V8.2L12 3Z" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 8V21" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 8L3 13" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 8L21 13" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
             </div>
-            <span className="text-xl font-bold tracking-tight">CG Waste</span>
+            <div>
+              <span className="block text-lg font-bold tracking-tight text-white leading-none">CG Waste</span>
+              <span className="block text-[10px] font-medium text-emerald-400 tracking-widest uppercase mt-0.5">Intelligence</span>
+            </div>
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className="md:hidden">
             <X className="w-6 h-6" />
@@ -85,8 +99,8 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
           
           {/* App Verification Links - Mandatory for Google Cloud compliance */}
           <div className="mt-4 px-4 flex flex-col space-y-2 text-[10px] text-slate-500 border-t border-slate-800 pt-4">
-             <a href="#" className="hover:text-slate-300 flex items-center"><ChevronRight className="w-3 h-3 mr-1"/> Privacy Policy</a>
-             <a href="#" className="hover:text-slate-300 flex items-center"><ChevronRight className="w-3 h-3 mr-1"/> Terms of Service</a>
+             <button onClick={handleLegalNavigation} className="hover:text-slate-300 flex items-center text-left w-full focus:outline-none"><ChevronRight className="w-3 h-3 mr-1"/> Privacy Policy</button>
+             <button onClick={handleLegalNavigation} className="hover:text-slate-300 flex items-center text-left w-full focus:outline-none"><ChevronRight className="w-3 h-3 mr-1"/> Terms of Service</button>
           </div>
         </div>
       </div>

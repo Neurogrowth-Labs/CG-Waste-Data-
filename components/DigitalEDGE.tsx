@@ -91,6 +91,7 @@ const DigitalEDGE: React.FC = () => {
   const [advisory, setAdvisory] = useState<string | null>(null);
   const [loadingAdvisory, setLoadingAdvisory] = useState(false);
   const [isForecasting, setIsForecasting] = useState(false);
+  const [evidenceCount, setEvidenceCount] = useState(0);
   
   // BIM State
   const [bimMaterials, setBimMaterials] = useState<BimMaterial[]>([]);
@@ -341,6 +342,20 @@ const DigitalEDGE: React.FC = () => {
       setAdvisory(report);
     } catch (e) { console.error(e); }
     setLoadingAdvisory(false);
+  };
+
+  const handleManageDocs = () => {
+    // Simulate document upload process
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.pdf,.png,.jpg';
+    input.onchange = (e: any) => {
+       if (e.target.files.length > 0) {
+          setEvidenceCount(c => c + 1);
+          alert("Document uploaded successfully and linked to compliance record.");
+       }
+    };
+    input.click();
   };
 
   // --- View: Onboarding ---
@@ -751,8 +766,11 @@ const DigitalEDGE: React.FC = () => {
                         <p className="text-xs text-slate-500">Weighbridge tickets & recycling certs required for audit.</p>
                      </div>
                   </div>
-                  <button className="text-xs bg-white border border-slate-300 hover:bg-slate-50 px-3 py-1.5 rounded font-medium text-slate-700">
-                     Manage Documents (0/4)
+                  <button 
+                     onClick={handleManageDocs}
+                     className="text-xs bg-white border border-slate-300 hover:bg-slate-50 px-3 py-1.5 rounded font-medium text-slate-700"
+                  >
+                     Manage Documents ({evidenceCount}/4)
                   </button>
               </div>
             )}

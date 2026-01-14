@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { Check, ChevronRight, Truck, Scale, MapPin, ClipboardCheck, ArrowRight, Wand2, Calculator, Save, Loader2, Calendar, History, Layers, Info, Sparkles } from 'lucide-react';
+import { Check, ChevronRight, Truck, Scale, MapPin, ClipboardCheck, ArrowRight, Wand2, Calculator, Save, Loader2, Calendar, History, Layers, Info, Sparkles, Printer } from 'lucide-react';
 import { predictProjectWaste } from '../services/geminiService';
 import { supabase } from '../lib/supabaseClient';
 
@@ -397,6 +397,8 @@ export const WasteTrackingWorkflow: React.FC = () => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [manifestId, setManifestId] = useState('');
+  const [isVerified, setIsVerified] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   
   // Smart Defaults State
   const [loadData, setLoadData] = useState({
@@ -470,6 +472,19 @@ export const WasteTrackingWorkflow: React.FC = () => {
   const handleReset = () => {
     setStep(1);
     setManifestId('');
+    setIsVerified(false);
+  };
+
+  const handleVerify = () => {
+    setIsVerifying(true);
+    setTimeout(() => {
+        setIsVerifying(false);
+        setIsVerified(true);
+    }, 1500);
+  };
+
+  const handlePrint = () => {
+    window.print();
   };
 
   return (
@@ -589,9 +604,25 @@ export const WasteTrackingWorkflow: React.FC = () => {
 
               <div className="border-t border-slate-100 pt-4">
                  <h4 className="text-sm font-medium text-slate-800 mb-2">Proof of Origin</h4>
-                 <div className="h-32 bg-slate-100 rounded-lg border-2 border-dashed border-slate-300 flex flex-col items-center justify-center text-slate-400 hover:bg-slate-50 hover:border-slate-400 cursor-pointer transition-colors">
-                    <ClipboardCheck className="w-6 h-6 mb-2" />
-                    <span className="text-xs">Tap to verify manifest</span>
+                 <div 
+                    onClick={!isVerified ? handleVerify : undefined}
+                    className={`h-32 rounded-lg border-2 border-dashed flex flex-col items-center justify-center transition-colors cursor-pointer ${
+                        isVerified ? 'bg-green-50 border-green-500 text-green-700' : 'bg-slate-100 border-slate-300 text-slate-400 hover:bg-slate-50 hover:border-slate-400'
+                    }`}
+                 >
+                    {isVerifying ? (
+                        <Loader2 className="w-6 h-6 animate-spin text-slate-500" />
+                    ) : isVerified ? (
+                        <>
+                            <Check className="w-8 h-8 mb-2" />
+                            <span className="text-xs font-bold uppercase">Verified Origin</span>
+                        </>
+                    ) : (
+                        <>
+                            <ClipboardCheck className="w-6 h-6 mb-2" />
+                            <span className="text-xs">Tap to verify manifest</span>
+                        </>
+                    )}
                  </div>
               </div>
             </div>
@@ -641,15 +672,16 @@ export const WasteTrackingWorkflow: React.FC = () => {
                )}
                <button 
                  onClick={() => step === 2 ? generateManifest() : setStep(step + 1)}
-                 disabled={loading}
-                 className="flex-1 py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 shadow-md transition-all flex justify-center items-center"
+                 disabled={loading || (step === 2 && !isVerified)}
+                 className="flex-1 py-3 rounded-lg bg-green-600 text-white font-medium hover:bg-green-700 shadow-md transition-all flex justify-center items-center disabled:opacity-50 disabled:cursor-not-allowed"
+                 title={step === 2 && !isVerified ? "Please verify manifest first" : ""}
                >
                  {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : step === 2 ? 'Generate Manifest' : 'Continue'}
                </button>
              </div>
            ) : (
-             <button className="w-full py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 shadow-md transition-all">
-               Print Ticket
+             <button onClick={handlePrint} className="w-full py-3 rounded-lg bg-slate-900 text-white font-medium hover:bg-slate-800 shadow-md transition-all flex items-center justify-center">
+               <Printer className="w-4 h-4 mr-2" /> Print Ticket
              </button>
            )}
         </div>
