@@ -146,57 +146,57 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
   if (mode === 'login') {
     return (
-      <div style={backgroundStyle} className="min-h-screen flex items-center justify-center p-4 relative overflow-hidden">
+      <div style={backgroundStyle} className="min-h-screen flex items-center justify-center p-6 md:p-12 relative overflow-hidden">
         <div style={overlayPattern}></div>
         {/* Organic Green Glow to represent Recycling/Sustainability */}
         <div className="absolute bottom-0 right-0 w-1/2 h-1/2 bg-green-900/20 blur-[120px] rounded-full pointer-events-none"></div>
 
-        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col z-10 border border-slate-700/30">
-          <div className="p-8 bg-slate-50/80 border-b border-slate-100 text-center">
-            <div className="w-16 h-16 bg-gradient-to-br from-emerald-400 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-xl shadow-green-600/20 transform hover:scale-105 transition-transform duration-300">
-               <svg viewBox="0 0 24 24" className="w-9 h-9 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+        <div className="bg-white/95 backdrop-blur-sm rounded-2xl shadow-2xl w-full max-w-[380px] overflow-hidden flex flex-col z-10 border border-slate-700/30 transform transition-all hover:shadow-green-900/20">
+          <div className="p-6 bg-slate-50/80 border-b border-slate-100 text-center">
+            <div className="w-12 h-12 bg-gradient-to-br from-emerald-400 to-green-600 rounded-xl flex items-center justify-center mx-auto mb-4 shadow-lg shadow-green-600/20">
+               <svg viewBox="0 0 24 24" className="w-7 h-7 text-white" fill="none" stroke="currentColor" strokeWidth="2">
                   <path d="M12 3L3 8.2V15.8L12 21L21 15.8V8.2L12 3Z" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M12 8V21" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M12 8L3 13" strokeLinecap="round" strokeLinejoin="round"/>
                   <path d="M12 8L21 13" strokeLinecap="round" strokeLinejoin="round"/>
                </svg>
             </div>
-            <h1 className="text-2xl font-bold text-slate-900 tracking-tight">CG Waste Data</h1>
-            <p className="text-sm text-slate-500 mt-2 font-medium">Enterprise Construction Intelligence</p>
+            <h1 className="text-xl font-bold text-slate-900 tracking-tight">CG Waste Data</h1>
+            <p className="text-xs text-slate-500 mt-1.5 font-medium">Enterprise Construction Intelligence</p>
           </div>
           
-          <form onSubmit={handleLogin} className="p-8 space-y-5">
+          <form onSubmit={handleLogin} className="p-6 space-y-4">
             {error && (
-              <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center">
-                <AlertTriangle className="w-4 h-4 mr-2" />
+              <div className="p-2.5 bg-red-50 text-red-600 text-xs rounded-lg flex items-center">
+                <AlertTriangle className="w-3.5 h-3.5 mr-2" />
                 {error}
               </div>
             )}
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Work Email</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Work Email</label>
               <div className="relative">
-                <Mail className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" />
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input 
                   type="email" 
                   required
                   value={formData.email}
                   onChange={e => setFormData({...formData, email: e.target.value})}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+                  className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all text-sm"
                   placeholder="name@company.com"
                 />
               </div>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-slate-700 mb-1">Password</label>
+              <label className="block text-xs font-semibold text-slate-700 mb-1">Password</label>
               <div className="relative">
-                <Lock className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" />
+                <Lock className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                 <input 
                   type="password" 
                   required
                   value={formData.password}
                   onChange={e => setFormData({...formData, password: e.target.value})}
-                  className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all"
+                  className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent outline-none transition-all text-sm"
                   placeholder="••••••••"
                 />
               </div>
@@ -205,18 +205,18 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             <button 
               type="submit" 
               disabled={loading}
-              className="w-full bg-slate-900 text-white py-2.5 rounded-lg font-medium hover:bg-slate-800 transition-colors flex items-center justify-center disabled:opacity-70 shadow-lg"
+              className="w-full bg-slate-900 text-white py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors flex items-center justify-center disabled:opacity-70 shadow-md"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Secure Login'}
             </button>
             
             {/* Google Sign In Section */}
-            <div className="relative my-4">
+            <div className="relative my-3">
               <div className="absolute inset-0 flex items-center">
                 <div className="w-full border-t border-slate-200"></div>
               </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-slate-500 text-xs uppercase">Or continue with</span>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-2 bg-white text-slate-500 text-[10px] uppercase tracking-wider">Or continue with</span>
               </div>
             </div>
 
@@ -224,9 +224,9 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               type="button"
               onClick={handleGoogleLogin}
               disabled={loading}
-              className="w-full bg-white border border-slate-300 text-slate-700 py-2.5 rounded-lg font-medium hover:bg-slate-50 transition-colors flex items-center justify-center disabled:opacity-70"
+              className="w-full bg-white border border-slate-300 text-slate-700 py-2 rounded-lg text-sm font-semibold hover:bg-slate-50 transition-colors flex items-center justify-center disabled:opacity-70"
             >
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 mr-2" viewBox="0 0 24 24">
                   <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                   <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
                   <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84z" fill="#FBBC05" />
@@ -235,22 +235,22 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               Sign in with Google
             </button>
 
-            <div className="text-center pt-2">
+            <div className="text-center pt-1">
               <button 
                 type="button" 
                 onClick={() => setMode('signup')}
-                className="text-sm text-green-700 font-medium hover:underline"
+                className="text-xs text-green-700 font-bold hover:underline"
               >
-                Start Enterprise Onboarding
+                Create Enterprise Account
               </button>
             </div>
 
-            <div className="border-t border-slate-100 pt-4 flex justify-center space-x-4">
-              <div className="flex items-center text-xs text-slate-400">
-                <Lock className="w-3 h-3 mr-1" /> ISO 27001
+            <div className="border-t border-slate-100 pt-3 flex justify-center space-x-4 opacity-70">
+              <div className="flex items-center text-[10px] text-slate-500">
+                <Lock className="w-2.5 h-2.5 mr-1" /> ISO 27001
               </div>
-              <div className="flex items-center text-xs text-slate-400">
-                <ShieldCheck className="w-3 h-3 mr-1" /> SOC 2 Type II
+              <div className="flex items-center text-[10px] text-slate-500">
+                <ShieldCheck className="w-2.5 h-2.5 mr-1" /> SOC 2 Type II
               </div>
             </div>
           </form>
@@ -261,19 +261,19 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
   // SIGN UP / ONBOARDING WIZARD
   return (
-    <div style={backgroundStyle} className="min-h-screen flex flex-col items-center justify-center p-4 relative">
+    <div style={backgroundStyle} className="min-h-screen flex flex-col items-center justify-center p-6 md:p-12 relative">
        <div style={overlayPattern}></div>
-      <div className="w-full max-w-3xl bg-white/95 backdrop-blur rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[500px] z-10">
+      <div className="w-full max-w-2xl bg-white/95 backdrop-blur rounded-2xl shadow-xl overflow-hidden flex flex-col md:flex-row min-h-[450px] z-10 border border-slate-700/30">
         
         {/* Sidebar / Progress */}
-        <div className="bg-slate-900 w-full md:w-64 p-8 flex flex-col justify-between text-white relative overflow-hidden">
+        <div className="bg-slate-900 w-full md:w-60 p-6 flex flex-col justify-between text-white relative overflow-hidden">
           {/* Subtle grid for sidebar too */}
           <div className="absolute inset-0 opacity-10" style={{backgroundImage: overlayPattern.backgroundImage}}></div>
           
           <div className="relative z-10">
-            <div className="flex items-center space-x-3 mb-10">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg">
-                  <svg viewBox="0 0 24 24" className="w-6 h-6 text-white" fill="none" stroke="currentColor" strokeWidth="2">
+            <div className="flex items-center space-x-3 mb-8">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg">
+                  <svg viewBox="0 0 24 24" className="w-5 h-5 text-white" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M12 3L3 8.2V15.8L12 21L21 15.8V8.2L12 3Z" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M12 8V21" strokeLinecap="round" strokeLinejoin="round"/>
                     <path d="M12 8L3 13" strokeLinecap="round" strokeLinejoin="round"/>
@@ -281,25 +281,25 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                   </svg>
               </div>
               <div>
-                 <span className="block text-xl font-bold tracking-tight text-white leading-none">CG Waste</span>
-                 <span className="block text-[10px] font-medium text-emerald-200 tracking-widest uppercase mt-1">Intelligence</span>
+                 <span className="block text-lg font-bold tracking-tight text-white leading-none">CG Waste</span>
+                 <span className="block text-[8px] font-medium text-emerald-200 tracking-widest uppercase mt-0.5">Intelligence</span>
               </div>
             </div>
             
-            <nav className="space-y-6 relative">
+            <nav className="space-y-5 relative">
                {/* Connecting Line */}
-               <div className="absolute left-3.5 top-2 bottom-2 w-0.5 bg-slate-800 -z-0"></div>
+               <div className="absolute left-3 top-2 bottom-2 w-px bg-slate-800 -z-0"></div>
                
                {STEPS.map((s, i) => (
                  <div key={s.id} className="relative z-10 flex items-center space-x-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border-2 transition-colors ${
+                    <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
                       step >= s.id 
                         ? 'bg-green-500 border-green-500 text-white' 
                         : 'bg-slate-900 border-slate-600 text-slate-400'
                     }`}>
-                      {step > s.id ? <Check className="w-4 h-4" /> : s.id}
+                      {step > s.id ? <Check className="w-3 h-3" /> : s.id}
                     </div>
-                    <span className={`text-sm font-medium ${step >= s.id ? 'text-white' : 'text-slate-500'}`}>
+                    <span className={`text-xs font-medium ${step >= s.id ? 'text-white' : 'text-slate-500'}`}>
                       {s.label}
                     </span>
                  </div>
@@ -307,44 +307,44 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             </nav>
           </div>
           
-          <div className="mt-8 pt-6 border-t border-slate-800 relative z-10">
-             <p className="text-xs text-slate-400 leading-relaxed">
-               This secure onboarding process ensures compliance with ISO 27001 Access Control policies.
+          <div className="mt-8 pt-4 border-t border-slate-800 relative z-10">
+             <p className="text-[10px] text-slate-400 leading-relaxed">
+               Secure onboarding compliant with ISO 27001 policies.
              </p>
           </div>
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 p-8 md:p-12 flex flex-col bg-slate-50">
+        <div className="flex-1 p-6 md:p-8 flex flex-col bg-slate-50">
           {error && (
-             <div className="mb-4 p-3 bg-red-50 text-red-600 text-sm rounded-lg flex items-center">
-               <AlertTriangle className="w-4 h-4 mr-2" />
+             <div className="mb-4 p-2.5 bg-red-50 text-red-600 text-xs rounded-lg flex items-center">
+               <AlertTriangle className="w-3.5 h-3.5 mr-2" />
                {error}
              </div>
           )}
           <div className="flex-1">
             {step === 1 && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-4 animate-fade-in">
                 <div>
-                   <h2 className="text-2xl font-bold text-slate-900">Identity Verification</h2>
-                   <p className="text-slate-500">Establish your digital identity for audit traceability.</p>
+                   <h2 className="text-xl font-bold text-slate-900">Identity Verification</h2>
+                   <p className="text-sm text-slate-500">Establish your digital identity for audit traceability.</p>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-3">
                    <div>
-                     <label className="block text-sm font-medium text-slate-700 mb-1">Full Legal Name</label>
+                     <label className="block text-xs font-medium text-slate-700 mb-1">Full Legal Name</label>
                      <input 
                        type="text" 
-                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" 
+                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" 
                        placeholder="John Doe"
                        value={formData.fullName}
                        onChange={e => setFormData({...formData, fullName: e.target.value})}
                      />
                    </div>
                    <div>
-                     <label className="block text-sm font-medium text-slate-700 mb-1">Work Email</label>
+                     <label className="block text-xs font-medium text-slate-700 mb-1">Work Email</label>
                      <input 
                        type="email" 
-                       className="w-full px-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" 
+                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" 
                        placeholder="john@construction-inc.com"
                        value={formData.email}
                        onChange={e => setFormData({...formData, email: e.target.value})}
@@ -355,19 +355,19 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             )}
 
             {step === 2 && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-4 animate-fade-in">
                 <div>
-                   <h2 className="text-2xl font-bold text-slate-900">Organization & Role</h2>
-                   <p className="text-slate-500">Define your access level and jurisdiction.</p>
+                   <h2 className="text-xl font-bold text-slate-900">Organization & Role</h2>
+                   <p className="text-sm text-slate-500">Define your access level and jurisdiction.</p>
                 </div>
-                <div className="space-y-4">
+                <div className="space-y-3">
                    <div>
-                     <label className="block text-sm font-medium text-slate-700 mb-1">Organization Name</label>
+                     <label className="block text-xs font-medium text-slate-700 mb-1">Organization Name</label>
                      <div className="relative">
-                       <Building2 className="w-5 h-5 text-slate-400 absolute left-3 top-2.5" />
+                       <Building2 className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
                        <input 
                          type="text" 
-                         className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none" 
+                         className="w-full pl-9 pr-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" 
                          placeholder="Company Ltd."
                          value={formData.orgName}
                          onChange={e => setFormData({...formData, orgName: e.target.value})}
@@ -376,11 +376,11 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                    </div>
                    
                    <div>
-                     <label className="block text-sm font-medium text-slate-700 mb-1">Role Type</label>
+                     <label className="block text-xs font-medium text-slate-700 mb-1">Role Type</label>
                      <select 
                        value={formData.role}
                        onChange={e => setFormData({...formData, role: e.target.value})}
-                       className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white"
+                       className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm"
                      >
                        <option value="manager">Site Manager / Contractor</option>
                        <option value="transporter">Waste Operator / Transporter</option>
@@ -389,18 +389,14 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                        <option value="regulator">Government / Regulator</option>
                        <option value="investor">Investor / ESG Auditor</option>
                      </select>
-                     <p className="text-xs text-amber-600 mt-2 flex items-center">
-                       <AlertTriangle className="w-3 h-3 mr-1" />
-                       Gov/Investor roles require manual verification.
-                     </p>
                    </div>
                    
                    <div>
-                     <label className="block text-sm font-medium text-slate-700 mb-1">Jurisdiction</label>
+                     <label className="block text-xs font-medium text-slate-700 mb-1">Jurisdiction</label>
                      <select 
                        value={formData.jurisdiction}
                        onChange={e => setFormData({...formData, jurisdiction: e.target.value})}
-                       className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white"
+                       className="w-full px-3 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm"
                      >
                        <option value="USA">United States</option>
                        <option value="UK">United Kingdom</option>
@@ -414,41 +410,40 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             )}
 
             {step === 3 && (
-              <div className="space-y-6 animate-fade-in">
+              <div className="space-y-4 animate-fade-in">
                 <div>
-                   <h2 className="text-2xl font-bold text-slate-900">Regulatory Context</h2>
-                   <p className="text-slate-500">Select applicable frameworks for compliance tracking.</p>
+                   <h2 className="text-xl font-bold text-slate-900">Regulatory Context</h2>
+                   <p className="text-sm text-slate-500">Select applicable frameworks for compliance tracking.</p>
                 </div>
                 
-                <div className="grid grid-cols-1 gap-3">
+                <div className="grid grid-cols-1 gap-2">
                   {ISO_STANDARDS.map(std => (
                     <button
                       key={std.id}
                       onClick={() => toggleStandard(std.id)}
-                      className={`p-4 rounded-xl border flex items-center justify-between transition-all ${
+                      className={`p-3 rounded-lg border flex items-center justify-between transition-all ${
                         formData.standards.includes(std.id)
                           ? 'border-green-500 bg-green-50 shadow-sm'
-                          : 'border-slate-200 hover:border-green-300'
+                          : 'border-slate-200 hover:border-green-300 bg-white'
                       }`}
                     >
                       <div className="flex items-center space-x-3">
-                        <div className={`p-2 rounded-lg ${formData.standards.includes(std.id) ? 'bg-white text-green-600' : 'bg-slate-100 text-slate-500'}`}>
-                          <std.icon className="w-5 h-5" />
+                        <div className={`p-1.5 rounded-lg ${formData.standards.includes(std.id) ? 'bg-white text-green-600' : 'bg-slate-100 text-slate-500'}`}>
+                          <std.icon className="w-4 h-4" />
                         </div>
-                        <span className={`font-medium ${formData.standards.includes(std.id) ? 'text-green-900' : 'text-slate-700'}`}>
+                        <span className={`text-sm font-medium ${formData.standards.includes(std.id) ? 'text-green-900' : 'text-slate-700'}`}>
                           {std.label}
                         </span>
                       </div>
-                      {formData.standards.includes(std.id) && <Check className="w-5 h-5 text-green-600" />}
+                      {formData.standards.includes(std.id) && <Check className="w-4 h-4 text-green-600" />}
                     </button>
                   ))}
                 </div>
                 
-                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
-                  <h4 className="text-sm font-semibold text-blue-900 mb-1">Acknowledgment</h4>
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
                   <label className="flex items-start space-x-2">
-                    <input type="checkbox" className="mt-1 rounded text-blue-600" defaultChecked />
-                    <span className="text-xs text-blue-800 leading-snug">
+                    <input type="checkbox" className="mt-0.5 rounded text-blue-600" defaultChecked />
+                    <span className="text-[10px] text-blue-800 leading-snug">
                       I acknowledge responsibility for data accuracy in accordance with the selected frameworks and ISO 9001 quality controls.
                     </span>
                   </label>
@@ -457,70 +452,70 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
             )}
 
             {step === 4 && (
-               <div className="space-y-6 animate-fade-in">
+               <div className="space-y-4 animate-fade-in">
                  <div>
-                    <h2 className="text-2xl font-bold text-slate-900">Security Hardening</h2>
-                    <p className="text-slate-500">Secure your account with Multi-Factor Authentication (MFA).</p>
+                    <h2 className="text-xl font-bold text-slate-900">Security Hardening</h2>
+                    <p className="text-sm text-slate-500">Secure your account with Multi-Factor Authentication (MFA).</p>
                  </div>
 
-                 <div className="space-y-4">
+                 <div className="space-y-3">
                     <button 
                       onClick={() => setFormData({...formData, mfaMethod: 'app'})}
-                      className={`w-full p-4 border rounded-xl flex items-center justify-between ${formData.mfaMethod === 'app' ? 'border-green-500 bg-green-50' : 'border-slate-200'}`}
+                      className={`w-full p-3 border rounded-xl flex items-center justify-between bg-white ${formData.mfaMethod === 'app' ? 'border-green-500 bg-green-50' : 'border-slate-200'}`}
                     >
                        <div className="flex items-center">
-                          <Smartphone className="w-6 h-6 text-slate-600 mr-3" />
+                          <Smartphone className="w-5 h-5 text-slate-600 mr-3" />
                           <div className="text-left">
-                             <div className="font-semibold text-slate-900">Authenticator App</div>
-                             <div className="text-xs text-slate-500">Google Auth, Authy, MS Auth</div>
+                             <div className="text-sm font-semibold text-slate-900">Authenticator App</div>
+                             <div className="text-[10px] text-slate-500">Google Auth, Authy, MS Auth</div>
                           </div>
                        </div>
-                       {formData.mfaMethod === 'app' && <div className="px-2 py-1 bg-green-200 text-green-800 text-xs font-bold rounded">RECOMMENDED</div>}
+                       {formData.mfaMethod === 'app' && <div className="px-1.5 py-0.5 bg-green-200 text-green-800 text-[10px] font-bold rounded">RECOMMENDED</div>}
                     </button>
 
                     <button 
                       onClick={() => setFormData({...formData, mfaMethod: 'bio'})}
-                      className={`w-full p-4 border rounded-xl flex items-center justify-between ${formData.mfaMethod === 'bio' ? 'border-green-500 bg-green-50' : 'border-slate-200'}`}
+                      className={`w-full p-3 border rounded-xl flex items-center justify-between bg-white ${formData.mfaMethod === 'bio' ? 'border-green-500 bg-green-50' : 'border-slate-200'}`}
                     >
                        <div className="flex items-center">
-                          <Fingerprint className="w-6 h-6 text-slate-600 mr-3" />
+                          <Fingerprint className="w-5 h-5 text-slate-600 mr-3" />
                           <div className="text-left">
-                             <div className="font-semibold text-slate-900">Hardware Key / Bio</div>
-                             <div className="text-xs text-slate-500">YubiKey, TouchID, Windows Hello</div>
+                             <div className="text-sm font-semibold text-slate-900">Hardware Key / Bio</div>
+                             <div className="text-[10px] text-slate-500">YubiKey, TouchID, Windows Hello</div>
                           </div>
                        </div>
                     </button>
                  </div>
                  
-                 <div className="pt-4 text-center">
-                    <p className="text-xs text-slate-400">
-                       By clicking Complete, you agree to the <button onClick={(e) => handleShowLegal(e, 'terms')} className="text-green-600 hover:underline">Terms of Service</button> and <button onClick={(e) => handleShowLegal(e, 'privacy')} className="text-green-600 hover:underline">Privacy Policy</button>.
+                 <div className="pt-2 text-center">
+                    <p className="text-[10px] text-slate-400">
+                       By clicking Complete, you agree to the <button onClick={(e) => handleShowLegal(e, 'terms')} className="text-green-600 hover:underline">Terms</button> and <button onClick={(e) => handleShowLegal(e, 'privacy')} className="text-green-600 hover:underline">Privacy Policy</button>.
                     </p>
                  </div>
                </div>
             )}
           </div>
           
-          <div className="mt-8 pt-6 border-t border-slate-100 flex justify-between items-center">
+          <div className="mt-6 pt-4 border-t border-slate-100 flex justify-between items-center">
              {step > 1 ? (
-                <button onClick={() => setStep(step - 1)} className="text-slate-500 hover:text-slate-800 font-medium px-4 py-2 rounded transition-colors">Back</button>
+                <button onClick={() => setStep(step - 1)} className="text-slate-500 hover:text-slate-800 font-medium px-3 py-1.5 rounded transition-colors text-sm">Back</button>
              ) : (
                 <div></div>
              )}
              <button 
                onClick={() => step === 4 ? handleSignupComplete() : setStep(step + 1)}
                disabled={loading}
-               className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 rounded-lg font-bold shadow-lg shadow-green-500/20 flex items-center transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+               className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-bold shadow-lg shadow-green-500/20 flex items-center transition-all disabled:opacity-70 disabled:cursor-not-allowed text-sm"
              >
-                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {loading ? <Loader2 className="w-3.5 h-3.5 animate-spin mr-2" /> : null}
                 {step === 4 ? 'Complete Setup' : 'Continue'}
-                {!loading && step < 4 && <ChevronRight className="w-4 h-4 ml-2" />}
+                {!loading && step < 4 && <ChevronRight className="w-3.5 h-3.5 ml-1.5" />}
              </button>
           </div>
         </div>
       </div>
-      <div className="mt-8 text-center relative z-10">
-         <p className="text-sm text-slate-300">Already have an account? <button onClick={() => setMode('login')} className="text-green-400 font-bold hover:underline">Log in</button></p>
+      <div className="mt-6 text-center relative z-10">
+         <p className="text-xs text-slate-300">Already have an account? <button onClick={() => setMode('login')} className="text-green-400 font-bold hover:underline">Log in</button></p>
       </div>
     </div>
   );
