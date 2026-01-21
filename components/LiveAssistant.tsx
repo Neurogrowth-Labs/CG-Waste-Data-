@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState } from 'react';
 import { Mic, MicOff, X, Activity } from 'lucide-react';
 import { GoogleGenAI, LiveServerMessage, Modality } from '@google/genai';
@@ -72,7 +73,7 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
         let nextStartTime = 0;
 
         const sessionPromise = ai.live.connect({
-          model: 'gemini-2.5-flash-native-audio-preview-09-2025',
+          model: 'gemini-2.5-flash-native-audio-preview-12-2025',
           config: {
             responseModalities: [Modality.AUDIO],
             speechConfig: {

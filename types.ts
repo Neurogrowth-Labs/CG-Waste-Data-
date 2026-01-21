@@ -42,7 +42,7 @@ export enum GeminiModel {
   PRO_IMG_3 = 'gemini-3-pro-image-preview',
   VEO_FAST = 'veo-3.1-fast-generate-preview',
   VEO_GEN = 'veo-3.1-generate-preview',
-  LIVE_AUDIO = 'gemini-2.5-flash-native-audio-preview-09-2025',
+  LIVE_AUDIO = 'gemini-2.5-flash-native-audio-preview-12-2025',
   TTS = 'gemini-2.5-flash-preview-tts'
 }
 
@@ -90,7 +90,7 @@ export interface BimMaterial {
   estimated_waste_rate: number; // %
 }
 
-// Window augmentation for AudioContext
+// Window augmentation for AudioContext and AI Studio
 declare global {
   interface Window {
     webkitAudioContext: typeof AudioContext;

@@ -29,33 +29,70 @@ export const generateThinking = async (prompt: string) => {
 export const getEdgeAdvisory = async (dataContext: any) => {
   const ai = getClient();
   // Part 3: EDGE Advisory Rule Logic (The "Digital Consultant")
+  // Updated with EDGE User Guide Part 8 - Auditor Guidance Version 3.0 AND Part 4 - Water Measures Version 3
   const prompt = `
-    Act as a senior IFC EDGE Green Building Consultant. Analyze this project's waste data against EDGE Material Efficiency standards.
+    Act as a strict **IFC EDGE Auditor (Version 3.0)**. Analyze this project against **EDGE Auditor Guidance Part 8** and **Water Measures Part 4**.
 
-    Project Context:
+    **CORE AUDITOR PROTOCOLS (Strict Compliance):**
+
+    1.  **Documentation Quality (Pg 19):**
+        *   **Completeness:** Must cover >90% of the measure. 
+        *   **Minor Information Gaps:** Acceptable ONLY if the gap affects savings by <0.5% and does not impact the 20% threshold.
+        *   **Reliability:** Photos must be geo-referenced and timestamped.
+
+    2.  **Sampling Rules (Table 10, Pg 50):**
+        *   **Homes/Apartments/Hotels:** Sample Size = (√Total Units) + 1. (Round up).
+        *   **Retail/Office:** Audit 40% of similar areas.
+        *   **Mixed Use:** Apply respective rules per typology.
+
+    3.  **Site Visit Requirements (Pg 33):**
+        *   **Water Flow Tests:** Minimum duration of **20 seconds** (10s allowed for gravity systems). Must meet 90% of specifications.
+        *   **Pressure:** Must test critical points (highest/lowest pressure).
+        *   **Remote Audits (Pg 37):** Only allowed if >80% of project was audited onsite within 12 months, or specific health/safety risks exist.
+
+    4.  **WATER MEASURES (Part 4 - v3.0 Specifics):**
+        *   **WEM01 (Showers) & WEM02 (Faucets):** Design phase flow rates must be quoted at **3 bar (43.5 psi)** pressure.
+        *   **WEM12 (Pool Covers):** From EDGE v3.1, **ONLY INDOOR** pool covers claim savings. Outdoor pools impact demand but claim no savings.
+        *   **WEM14 (Rainwater):** Must demonstrate it replaces municipal water (e.g., dual piping photos required).
+        *   **WEM17 (Smart Meters):** Meters must measure use, detect leaks (even offline), and display insights. Landlords must have access to data for Core & Shell.
+        *   **No Savings Cases:** "Bucket baths" (WEM01) or "Bucket flush" (WEM04) result in 0% savings vs base case.
+
+    5.  **Specific Measure Checks:**
+        *   **EEM05 (Roof):** Overhangs excluded from "Aggregate Roof Area".
+        *   **MEM01 (Floor):** Verify steel content and thickness.
+        *   **Data Centers (Pg 40):** Verify PUE Category 2. Metering must be at PDU output (Point A). If UPS (Point B) is used, assume 3% loss.
+        *   **Industrial:** Skylights >5% of roof area are MANDATORY for projects registered after Jan 1, 2026.
+
+    6.  **Audit Trail (Pg 17):**
+        *   All communication must happen in the "Audit Trail".
+        *   Auditors cannot directly modify the subproject; they only comment.
+
+    **Project Context:**
     ${JSON.stringify(dataContext)}
 
-    **Advisory Rules to Apply:**
-    1.  **Certification Risk:** IF Material Efficiency < 20% THEN Status = "EDGE Risk". Warn clearly.
-    2.  **Concrete Logic:** IF Concrete Recovery < 40% THEN Suggest on-site crushing/reuse to meet best practice.
-    3.  **Steel Logic:** IF Steel Recycling > 80% THEN Highlight revenue potential and cost optimization.
-    4.  **Local Context:** IF Location is known, suggest specific local recycling infrastructure or informal sector integration opportunities.
+    **Task:**
+    Provide a specific "EDGE v3 Auditor Report".
 
     **Required Output Format (Markdown):**
     
-    ### 🚦 EDGE Readiness Status: [Calculated Status]
-    
-    ### 🧠 Strategic Recommendations
-    *   [Recommendation 1 based on rules]
-    *   [Recommendation 2 based on rules]
-    *   [Recommendation 3 based on rules]
+    ### 📋 Audit Strategy & Sampling
+    *   **Recommended Sample Size:** [Calculate based on unit count using (√N)+1 rule].
+    *   **Site Visit Focus:** [Identify specific checks, e.g., "Test 14 showerheads for 20s each"].
 
-    ### 📉 Carbon & Cost Impact
-    *   **Embodied Carbon:** [Estimate savings]
-    *   **Economic Opportunity:** [Estimate value recovery]
+    ### 💧 Water Efficiency Analysis (Part 4)
+    *   **Fixture Check:** [Comment on WEM01/02/04 specs. Ensure 3 bar pressure rating is documented].
+    *   **Special Systems:** [Check eligibility of WEM12/14/17 if applicable].
 
-    ### 📝 Audit Evidence Checklist
-    *   [List specific documents needed based on the streams, e.g., Weighbridge tickets for Concrete]
+    ### 🏗️ Technical Verification (Desktop)
+    *   **Material Efficiency:** [Analyze MEM inputs. Note if "Minor Information Gaps" might apply].
+    *   **Energy Claims:** [Check if "Virtual Energy" applies (if no HVAC). Verify WWR calculations].
+
+    ### 🚩 Auditor Flags (Non-Conformity Risks)
+    *   [List potential issues based on v3.0 rules, e.g., "Ensure Data Center PUE metering is at PDU level"].
+
+    ### 📝 Required Evidence Checklist
+    *   **Photos:** Geo-tagged photos of [Key Elements].
+    *   **Docs:** Purchase orders/Mill certs for [Specific Materials].
   `;
 
   const response = await ai.models.generateContent({
@@ -124,7 +161,7 @@ export const predictEdgeBaselines = async (projectDetails: any) => {
   const ai = getClient();
   const prompt = `
     Act as an expert Quantity Surveyor and IFC EDGE Consultant. 
-    Generate a Design-Stage Waste Forecast for the following project to estimate Material Efficiency.
+    Generate a Design-Stage Waste Forecast and **EDGE Material Baseline** for the following project.
 
     **Project Details:**
     - Type: ${projectDetails.project_type}
@@ -133,17 +170,16 @@ export const predictEdgeBaselines = async (projectDetails: any) => {
     - Phase: ${projectDetails.construction_phase}
 
     **Task:**
-    1. Estimate the **Baseline Waste Generation (tonnes)** for standard construction practices in this region.
-    2. Propose **Improved/Target Quantities (tonnes)** assuming EDGE Best Practices (e.g. pre-fab, recycling, waste-efficient design).
+    1. Estimate the **Baseline Material Quantities** based on the "Standard construction practice prevalent in the region" (EDGE Definition).
+    2. Propose **Improved/Target Quantities** assuming EDGE Best Practices (e.g., MEM01 Concrete >25% GGBS, MEM05 AAC Blocks).
     
-    **Required Streams:**
-    - Concrete
-    - Steel
-    - Timber
-    - Brick
-    - Glass
-    - Plastics
-    - Excavation
+    **Required Streams (Map to EDGE MEM Codes):**
+    - Concrete (MEM01/02)
+    - Steel (MEM01/02/04)
+    - Timber (MEM03/07)
+    - Brick/Block (MEM05/06)
+    - Glass (MEM08)
+    - Insulation (MEM09/10/11)
 
     **Output Format:**
     Return strictly a JSON object with this structure:
@@ -195,28 +231,20 @@ export const predictEdgeBaselines = async (projectDetails: any) => {
 export const analyzeConstructionPlan = async (base64Image: string, mimeType: string) => {
   const ai = getClient();
   const prompt = `
-    Act as an expert IFC EDGE Green Building Consultant & Architect. Analyze this architectural construction plan/drawing.
+    Act as an expert **IFC EDGE Auditor**. Analyze this architectural construction plan/drawing against **Auditor Guidance Part 8**.
     
-    Based on the layout, typology, and visible elements, provide a **Net Zero Readiness Report** with specific technical interventions to meet EDGE Advanced standards (>40% savings) or Zero Carbon.
+    1. **Design Verification (Pg 20):**
+       - Identify the **Gross Internal Area (GIA)** boundaries. Check if balconies or exterior shafts are correctly excluded/included.
+       - Verify **Window-to-Wall Ratio (WWR)** estimations visually.
+    
+    2. **Material Verification:**
+       - **MEM05:** Identify wall materials.
+       - **MEM04:** Identify roof construction (if visible).
+    
+    3. **Sampling Strategy:**
+       - Based on the number of similar units visible, suggest a sampling count using the (√N)+1 rule.
 
-    1. **💧 Water Efficiency (>30% Reduction Required)**:
-       - **Low-Flow Fixtures:** Recommend precise flow rates to hit 30% savings (e.g., Showerheads < 6 L/min, Taps < 4 L/min, WCs < 3 L/flush dual flush).
-       - **Recycling Systems:** Assess roof area for Rainwater Harvesting potential. Suggest Greywater Recycling for irrigation/flushing if the layout allows for separate plumbing stacks.
-       - **Landscaping:** If exterior is visible, recommend xeriscaping or native drought-resistant plants to reduce irrigation demand by 50%.
-
-    2. **⚡ Energy Efficiency (>30% Reduction Required)**:
-       - **Window Positioning & Daylighting:** Analyze the current window placement. Suggest optimized positioning (e.g., increased glazing on North/South for light without heat gain, reduced East/West glazing).
-       - **Passive Cooling:** Suggest cross-ventilation strategies based on the floor plan layout.
-       - **Flood Prevention:** If the site context suggests, recommend raising window sill heights or using water-resistant materials on ground floors.
-       - **Active Systems:** Recommend efficient HVAC (e.g., VRF COP > 3.5) and LED lighting (LPD < 6 W/m²).
-
-    3. **🧱 Zero Carbon Materials**:
-       - **Material Substitution:** Identify conventional materials (e.g., concrete slab). Suggest specific **Zero Carbon alternatives**:
-         - *Floor:* Polished Concrete with 50% GGBS or Recycled Timber.
-         - *Walls:* Hempcrete blocks, Compressed Stabilized Earth Blocks (CSEB), or Cross Laminated Timber (CLT).
-       - **HERO MATERIAL:** Identify the **single most impactful substitution** for this specific design that would drastically reduce embodied carbon (e.g., "Replacing the RCC frame with a Timber Hybrid structure").
-
-    Format the response as a structured Markdown technical report with bold headings and bullet points for readability.
+    Format the response as a structured Markdown "Auditor Findings" report.
   `;
 
   const response = await ai.models.generateContent({

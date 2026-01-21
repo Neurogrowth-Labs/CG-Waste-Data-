@@ -5,7 +5,7 @@ import {
   FileText, Zap, Recycle, Brain, Loader2, Lock,
   TrafficCone, TrendingUp, DollarSign, UploadCloud, ChevronRight, 
   BarChart3, Box, Layers, HelpCircle, ShieldCheck, FileCheck, Search,
-  ScanLine, ImageIcon, Plus, Trash2, Wand2
+  ScanLine, ImageIcon, Plus, Trash2, Wand2, Calculator, MessageSquare, ListChecks, Info
 } from 'lucide-react';
 import { getEdgeAdvisory, analyzeConstructionPlan, predictEdgeBaselines } from '../services/geminiService';
 import { EdgeProject, EdgeMaterialStream, BimMaterial } from '../types';
@@ -38,44 +38,160 @@ const ReadinessTrafficLight = ({ score, target }: { score: number, target: numbe
   );
 };
 
+const SamplingCalculator = () => {
+    const [typology, setTypology] = useState('Homes/Apartments');
+    const [unitCount, setUnitCount] = useState(0);
+
+    const calculateSample = () => {
+        if (unitCount <= 0) return 0;
+        if (typology === 'Retail/Office') return '40% Area';
+        // Formula: Square root of units + 1
+        return Math.ceil(Math.sqrt(unitCount) + 1);
+    };
+
+    const sampleSize = calculateSample();
+
+    return (
+        <div className="bg-slate-50 p-6 rounded-xl border border-slate-200 mb-6">
+            <h4 className="font-bold text-slate-800 flex items-center mb-4">
+                <Calculator className="w-5 h-5 mr-2 text-slate-600" /> Audit Sampling Calculator (v3.0)
+            </h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Building Typology</label>
+                    <select 
+                        className="w-full text-sm border-slate-300 rounded-md p-2 bg-white"
+                        value={typology}
+                        onChange={(e) => setTypology(e.target.value)}
+                    >
+                        <option value="Homes/Apartments">Homes & Apartments</option>
+                        <option value="Hotels/Resorts">Hotels & Resorts</option>
+                        <option value="Healthcare">Healthcare</option>
+                        <option value="Retail/Office">Retail & Office</option>
+                    </select>
+                </div>
+                <div>
+                    <label className="block text-xs font-medium text-slate-500 mb-1">Total Units/Rooms</label>
+                    <input 
+                        type="number" 
+                        className="w-full text-sm border-slate-300 rounded-md p-2"
+                        value={unitCount}
+                        onChange={(e) => setUnitCount(parseInt(e.target.value) || 0)}
+                        placeholder="e.g. 160"
+                    />
+                </div>
+                <div className="bg-white border border-slate-200 rounded-md p-3 text-center">
+                    <span className="block text-xs text-slate-400 uppercase font-bold">Required Sample</span>
+                    <span className="text-xl font-bold text-green-600">{sampleSize}</span>
+                    <span className="text-[10px] text-slate-400 block">
+                        {typology === 'Retail/Office' ? 'of similar areas' : 'units/rooms'}
+                    </span>
+                </div>
+            </div>
+            <p className="text-[10px] text-slate-500 mt-2">
+                *Based on EDGE User Guide Part 8, Table 10. For apartments, calculate per typology. For Retail/Office, verify 40% of similar areas.
+            </p>
+        </div>
+    );
+};
+
+const AuditTrail = () => {
+    const [comments, setComments] = useState([
+        { id: 1, author: 'Auditor', role: 'Auditor', text: 'Documentation Requirements: Concise text to describe requirement 1 [located in specs.pdf, page 4]. Parameter: U-Value [0.45 W/m2K]. Checked and verified.', date: '2 hours ago' },
+        { id: 2, author: 'Certifier Reviewer', role: 'Certifier', text: 'In case of rejection, the reason for rejection must be very clear. Please clarify the wall thickness assumption in MEM05.', date: '1 hour ago' }
+    ]);
+    const [newComment, setNewComment] = useState('');
+
+    const addComment = () => {
+        if(!newComment) return;
+        setComments([...comments, { id: Date.now(), author: 'Project Team', role: 'Client', text: newComment, date: 'Just now' }]);
+        setNewComment('');
+    };
+
+    return (
+        <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[500px]">
+             <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <h3 className="font-bold text-slate-800 flex items-center">
+                    <ListChecks className="w-5 h-5 mr-2 text-blue-600" /> Official Audit Trail
+                </h3>
+                <span className="text-xs text-slate-500">v3.0 Protocol Compliance</span>
+             </div>
+             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {comments.map(c => (
+                    <div key={c.id} className={`flex flex-col ${c.role === 'Client' ? 'items-end' : 'items-start'}`}>
+                        <div className={`max-w-[80%] rounded-lg p-3 ${
+                            c.role === 'Auditor' ? 'bg-green-50 border border-green-100' : 
+                            c.role === 'Certifier' ? 'bg-amber-50 border border-amber-100' :
+                            'bg-slate-100 border border-slate-200'
+                        }`}>
+                            <div className="flex items-center space-x-2 mb-1">
+                                <span className={`text-xs font-bold ${
+                                     c.role === 'Auditor' ? 'text-green-700' : 
+                                     c.role === 'Certifier' ? 'text-amber-700' : 'text-slate-700'
+                                }`}>{c.author}</span>
+                                <span className="text-[10px] text-slate-400">{c.date}</span>
+                            </div>
+                            <p className="text-sm text-slate-700 whitespace-pre-wrap">{c.text}</p>
+                        </div>
+                    </div>
+                ))}
+             </div>
+             <div className="p-4 border-t border-slate-200 bg-slate-50">
+                <textarea 
+                    className="w-full border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500 outline-none resize-none"
+                    placeholder="Enter Client Comment (refer to filenames e.g. Roof_Areas_with_SRI-02.pdf)..."
+                    rows={3}
+                    value={newComment}
+                    onChange={(e) => setNewComment(e.target.value)}
+                />
+                <div className="flex justify-end mt-2">
+                    <button onClick={addComment} className="px-4 py-2 bg-blue-600 text-white rounded-md text-sm font-medium hover:bg-blue-700 transition-colors">
+                        Post to Audit Trail
+                    </button>
+                </div>
+             </div>
+        </div>
+    );
+};
+
 const AUDITOR_QA = [
   {
-    q: "How does the system align with the official EDGE methodology?",
-    a: "The platform mirrors the EDGE methodology by separating baseline assumptions from the improved case. Baseline values are locked to preserve audit integrity. All improvements are calculated transparently against these baselines using material efficiency logic consistent with IFC EDGE requirements."
+    q: "Do outdoor pool covers count for savings?",
+    a: "No. From EDGE v3.1, WEM12 only considers energy and water savings for INDOOR swimming pool covers. Outdoor pools impact demand but claim no savings. (WEM12)"
   },
   {
-    q: "Can users manipulate data to inflate EDGE scores?",
-    a: "No. Baseline data cannot be edited. Improved-case values must be supported by uploaded evidence such as weighbridge tickets and recycler certificates. All changes are logged with timestamps."
+    q: "How must shower flow rate be measured?",
+    a: "Flow rate must be quoted for an operating pressure of at least 3 bar (43.5 psi). On-site tests must verify this pressure. (WEM01)"
   },
   {
-    q: "How do you verify waste recovery and diversion claims?",
-    a: "Each waste transaction is linked to verifiable documentation. The system flags unsupported entries and excludes them from EDGE calculations until validated."
+    q: "Does rainwater harvesting always count?",
+    a: "No. WEM14 can only be claimed if it is demonstrated that the harvested water replaces municipal water supply (e.g. for toilet flushing or irrigation). (WEM14)"
   },
   {
-    q: "Is this tool replacing an EDGE Expert?",
-    a: "No. The platform supports EDGE Experts by standardizing data, calculations, and evidence preparation. Final certification decisions remain with accredited EDGE auditors."
+    q: "What defines a 'Minor Information Gap' in v3.0?",
+    a: "A circumstance where absence of data leads to <0.5% deviation in savings, and the 20% threshold is not impacted. (Pg 7)"
   },
   {
-    q: "How does the system handle local context differences?",
-    a: "EDGE baselines are country-specific. The advisory engine adjusts recommendations based on local waste infrastructure and approved recyclers while maintaining global thresholds."
+    q: "What are the Smart Meter requirements (WEM17)?",
+    a: "They must measure use during offline periods, assist in leak detection, and display insights. For Core & Shell, landlords must have access to data."
   },
   {
-    q: "What happens if evidence is missing?",
-    a: "The system automatically flags the item as non-compliant and excludes it from the improved-case calculation. The project status changes to 'EDGE Risk' until evidence is provided."
+    q: "What is the sampling rule for Apartments/Hotels?",
+    a: "Square root of the number of units + 1 (√N + 1), rounded up, for each typology. (Table 10, Pg 50)"
   },
   {
-    q: "How do you ensure data security and integrity?",
-    a: "The platform follows ISO 27001 principles, uses encrypted storage, role-based access control, and maintains immutable audit logs."
+    q: "Can I use 'Bucket Baths' or 'Bucket Flush'?",
+    a: "Yes, but they result in 0% savings compared to the Base Case. (WEM01/WEM04)"
   },
   {
-    q: "Can EDGE auditors independently verify calculations?",
-    a: "Yes. All calculations are transparent and exportable. Auditors can trace every percentage improvement back to raw waste data."
+    q: "How to handle Data Centers?",
+    a: "Verify PUE Category 2. Metering must be at PDU output (Point A). If measured at UPS (Point B), assume 3% loss. (Pg 40)"
   }
 ];
 
 const DigitalEDGE: React.FC = () => {
   const [viewState, setViewState] = useState<'onboarding' | 'analysis'>('onboarding');
-  const [activeTab, setActiveTab] = useState<'calculator' | 'bim' | 'auditor' | 'plan'>('calculator');
+  const [activeTab, setActiveTab] = useState<'calculator' | 'bim' | 'auditor' | 'plan' | 'trail'>('calculator');
   
   const [project, setProject] = useState<EdgeProject>({
     project_id: 'new',
@@ -462,7 +578,10 @@ const DigitalEDGE: React.FC = () => {
           <ScanLine className="w-4 h-4 mr-2" /> Deep Plan Scanner
         </button>
         <button onClick={() => setActiveTab('auditor')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center ${activeTab === 'auditor' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
-          <ShieldCheck className="w-4 h-4 mr-2" /> Auditor Defense
+          <ShieldCheck className="w-4 h-4 mr-2" /> Auditor Guidance
+        </button>
+        <button onClick={() => setActiveTab('trail')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center ${activeTab === 'trail' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+          <MessageSquare className="w-4 h-4 mr-2" /> Audit Trail
         </button>
       </div>
 
@@ -715,21 +834,21 @@ const DigitalEDGE: React.FC = () => {
               </div>
             )}
 
-            {/* TAB: AUDITOR DEFENSE */}
+            {/* TAB: AUDITOR GUIDANCE */}
             {activeTab === 'auditor' && (
               <div className="flex-1 flex flex-col">
                  <div className="p-6 bg-slate-900 text-white">
                     <h3 className="text-lg font-bold flex items-center mb-2">
-                       <ShieldCheck className="w-5 h-5 mr-2" /> Auditor Knowledge Base
+                       <ShieldCheck className="w-5 h-5 mr-2" /> Auditor Guidance (v3.0)
                     </h3>
                     <p className="text-slate-400 text-sm mb-4">
-                       Standardized, defensible responses for IFC EDGE Audits. Use these statements to verify compliance.
+                       Standardized protocols based on Auditor Guidance Part 8.
                     </p>
                     <div className="relative">
                        <Search className="w-4 h-4 absolute left-3 top-3 text-slate-400" />
                        <input 
                          type="text" 
-                         placeholder="Search audit topics (e.g. 'Evidence', 'Baseline')..." 
+                         placeholder="Search audit topics (e.g. 'Sample', 'Remote')..." 
                          value={qaSearch}
                          onChange={e => setQaSearch(e.target.value)}
                          className="w-full bg-slate-800 border border-slate-700 rounded-lg pl-10 pr-4 py-2 text-sm focus:outline-none focus:border-green-500"
@@ -737,6 +856,7 @@ const DigitalEDGE: React.FC = () => {
                     </div>
                  </div>
                  <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+                    <SamplingCalculator />
                     <div className="space-y-4">
                        {AUDITOR_QA.filter(qa => qa.q.toLowerCase().includes(qaSearch.toLowerCase()) || qa.a.toLowerCase().includes(qaSearch.toLowerCase())).map((qa, i) => (
                           <div key={i} className="bg-white border border-slate-200 rounded-xl p-5 shadow-sm">
@@ -754,8 +874,15 @@ const DigitalEDGE: React.FC = () => {
               </div>
             )}
 
+            {/* TAB: AUDIT TRAIL */}
+            {activeTab === 'trail' && (
+                <div className="flex-1 flex flex-col p-6 bg-slate-50 overflow-y-auto">
+                    <AuditTrail />
+                </div>
+            )}
+
             {/* FOOTER: EVIDENCE UPLOAD (Always visible on Calculator/Auditor) */}
-            {activeTab !== 'bim' && activeTab !== 'plan' && (
+            {activeTab !== 'bim' && activeTab !== 'plan' && activeTab !== 'trail' && (
               <div className="p-4 border-t border-slate-200 bg-slate-50 flex justify-between items-center">
                   <div className="flex items-center space-x-3">
                      <div className="p-2 bg-white border border-slate-200 rounded text-slate-400">
@@ -781,7 +908,7 @@ const DigitalEDGE: React.FC = () => {
             {/* Rule-Based Alerts */}
             <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
                <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center">
-                 <Lock className="w-3 h-3 mr-1" /> Consultant Rules
+                 <Lock className="w-3 h-3 mr-1" /> Auditor Rules
                </h4>
                <div className="space-y-2">
                   {score < 20 && (
@@ -800,6 +927,12 @@ const DigitalEDGE: React.FC = () => {
                        </div>
                     </div>
                   )}
+                  <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg flex items-start">
+                       <Info className="w-4 h-4 text-blue-600 mt-0.5 mr-2 shrink-0" />
+                       <div className="text-xs text-blue-800">
+                         <strong>v3.0 Sampling:</strong><br/>For apartments, ensure sample size = √N + 1.
+                       </div>
+                  </div>
                </div>
             </div>
 
@@ -808,18 +941,18 @@ const DigitalEDGE: React.FC = () => {
                <div className="p-4 border-b border-slate-800 bg-slate-800/50 flex justify-between items-center">
                   <div className="flex items-center space-x-2">
                      <Brain className="w-4 h-4 text-purple-400" />
-                     <span className="font-bold text-sm">Advisory Engine</span>
+                     <span className="font-bold text-sm">Auditor Engine</span>
                   </div>
                   <button onClick={runAdvisory} disabled={loadingAdvisory}
                     className="text-xs bg-purple-600 hover:bg-purple-500 px-3 py-1.5 rounded text-white disabled:opacity-50">
-                    {loadingAdvisory ? 'Thinking...' : 'Analyze'}
+                    {loadingAdvisory ? 'Analyzing...' : 'Run Audit'}
                   </button>
                </div>
                <div className="flex-1 p-4 overflow-y-auto text-sm text-slate-300 space-y-4 scrollbar-thin scrollbar-thumb-slate-700">
                   {loadingAdvisory ? (
                      <div className="flex flex-col items-center justify-center h-full space-y-4 opacity-70">
                         <Loader2 className="w-8 h-8 animate-spin text-purple-500" />
-                        <p className="text-center text-xs">Simulating IFC EDGE Audit...</p>
+                        <p className="text-center text-xs">Simulating IFC EDGE Audit (v3.0)...</p>
                      </div>
                   ) : advisory ? (
                      <div className="prose prose-invert prose-sm max-w-none whitespace-pre-wrap">
@@ -827,7 +960,7 @@ const DigitalEDGE: React.FC = () => {
                      </div>
                   ) : (
                      <div className="text-center pt-8 opacity-50 px-4">
-                        <p className="text-xs">Run analysis to generate a strategic certification report.</p>
+                        <p className="text-xs">Run analysis to generate a strategic v3.0 Auditor Report.</p>
                      </div>
                   )}
                </div>
