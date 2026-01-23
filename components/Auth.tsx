@@ -82,6 +82,38 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     }
   };
 
+  const handleNextStep = () => {
+    setError(null);
+
+    // Step 1 Validation: Identity
+    if (step === 1) {
+      if (!formData.fullName.trim()) {
+        setError("Please enter your full legal name.");
+        return;
+      }
+      if (!formData.email.trim()) {
+        setError("Please enter your work email.");
+        return;
+      }
+      // Simple email format check
+      if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
+        setError("Please enter a valid email address.");
+        return;
+      }
+    }
+
+    // Step 2 Validation: Organization
+    if (step === 2) {
+      if (!formData.orgName.trim()) {
+        setError("Organization Name is required.");
+        return;
+      }
+    }
+
+    // Proceed if valid
+    setStep(step + 1);
+  };
+
   const handleSignupComplete = async () => {
     setLoading(true);
     setError(null);
@@ -294,7 +326,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                  <div key={s.id} className="relative z-10 flex items-center space-x-3">
                     <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold border-2 transition-colors ${
                       step >= s.id 
-                        ? 'bg-green-500 border-green-500 text-white' 
+                        ? 'bg-green-50 border-green-500 text-white' 
                         : 'bg-slate-900 border-slate-600 text-slate-400'
                     }`}>
                       {step > s.id ? <Check className="w-3 h-3" /> : s.id}
@@ -503,7 +535,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                 <div></div>
              )}
              <button 
-               onClick={() => step === 4 ? handleSignupComplete() : setStep(step + 1)}
+               onClick={() => step === 4 ? handleSignupComplete() : handleNextStep()}
                disabled={loading}
                className="bg-green-600 hover:bg-green-700 text-white px-5 py-2 rounded-lg font-bold shadow-lg shadow-green-500/20 flex items-center transition-all disabled:opacity-70 disabled:cursor-not-allowed text-sm"
              >

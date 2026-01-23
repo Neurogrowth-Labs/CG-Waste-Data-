@@ -60,7 +60,7 @@ export const getEdgeAdvisory = async (dataContext: any) => {
     5.  **Specific Measure Checks:**
         *   **EEM05 (Roof):** Overhangs excluded from "Aggregate Roof Area".
         *   **MEM01 (Floor):** Verify steel content and thickness.
-        *   **Data Centers (Pg 40):** Verify PUE Category 2. Metering must be at PDU output (Point A). If UPS (Point B) is used, assume 3% loss.
+        *   **Data Centers (Pg 40):** Verify PUE Category 2. Metering must be at PDU output (Point A). If measured at UPS (Point B) is used, assume 3% loss.
         *   **Industrial:** Skylights >5% of roof area are MANDATORY for projects registered after Jan 1, 2026.
 
     6.  **Audit Trail (Pg 17):**
@@ -103,6 +103,162 @@ export const getEdgeAdvisory = async (dataContext: any) => {
     }
   });
   return response.text;
+};
+
+export const checkRegulatoryCompliance = async (projectDetails: any, streams: any[], jurisdiction: string) => {
+  const ai = getClient();
+  const prompt = `
+    Act as a strict **Environmental Compliance Officer and Legal Analyst** for the construction industry in **${jurisdiction}**.
+    Audit the following project's waste management plan for regulatory compliance.
+
+    **Project Context:**
+    - Type: ${projectDetails.project_type}
+    - Phase: ${projectDetails.construction_phase}
+    - GFA: ${projectDetails.gross_floor_area} m2
+
+    **Waste Streams & Strategy:**
+    ${JSON.stringify(streams.map((s: any) => ({ 
+        type: s.material_type, 
+        quantity: s.improved_quantity_tons, 
+        method: s.disposal_method, // e.g., Landfill, Recycle
+        status: s.evidence_status // e.g., Pending, Verified
+    })))}
+
+    **Task:**
+    1.  **Analyze against local regulations** (e.g., SWMP requirements, diversion targets, HazMat protocols) specific to ${jurisdiction}.
+    2.  **Identify specific violations** or risks (e.g., "Concrete to Landfill" might violate diversion mandates).
+    3.  **Determine required permits** (e.g., "Asbestos Abatement Permit" if HazMat is present).
+
+    **Output Format (JSON):**
+    {
+      "compliance_score": number (0-100),
+      "risk_level": "Low" | "Medium" | "High" | "Critical",
+      "violations": [
+        { "severity": "High" | "Medium" | "Low", "regulation": "string", "description": "string", "remediation": "string" }
+      ],
+      "required_permits": [
+        { "name": "string", "reason": "string", "status": "Missing" | "Likely Required" }
+      ],
+      "regulatory_report": "string (Executive summary suitable for submission to local council/municipality)"
+    }
+  `;
+
+  const response = await ai.models.generateContent({
+    model: GeminiModel.FLASH_3,
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          compliance_score: { type: Type.NUMBER },
+          risk_level: { type: Type.STRING },
+          violations: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                severity: { type: Type.STRING },
+                regulation: { type: Type.STRING },
+                description: { type: Type.STRING },
+                remediation: { type: Type.STRING }
+              }
+            }
+          },
+          required_permits: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                name: { type: Type.STRING },
+                reason: { type: Type.STRING },
+                status: { type: Type.STRING }
+              }
+            }
+          },
+          regulatory_report: { type: Type.STRING }
+        }
+      }
+    }
+  });
+  
+  return JSON.parse(response.text || "{}");
+};
+
+export const generateCostBenefitAnalysis = async (projectDetails: any, streams: any[], costs: any) => {
+  const ai = getClient();
+  const prompt = `
+    Act as a **Construction Financial Analyst and Waste Broker**.
+    Perform a **Cost & Revenue Optimization Analysis** for the following construction waste streams based on real-time market logic.
+
+    **Project Context:**
+    - Type: ${projectDetails.project_type}
+    - Location: ${projectDetails.location}
+
+    **User-Provided Cost Factors:**
+    - Landfill Tipping Fee: $${costs.tippingFee}/ton
+    - Transport Cost: $${costs.transportCost}/km
+    - Avg Distance to Landfill: ${costs.landfillDist} km
+    - Avg Distance to Recycler: ${costs.recyclerDist} km
+
+    **Waste Streams Data:**
+    ${JSON.stringify(streams.map((s: any) => ({ type: s.material_type, quantity: s.improved_quantity_tons, method: s.disposal_method, recovery: s.recovery_percentage })))}
+
+    **Task:**
+    1.  **Revenue Modeling:** Estimate potential revenue from salvage/resale (Metal, Timber, High-value plastics) based on typical market spot prices for the region (assume global averages if unspecified).
+    2.  **Cost Avoidance:** Calculate actual cost savings by diverting from landfill (avoided tipping fees + transport delta).
+    3.  **Optimization Strategy:** Identify the "Optimal Disposal Strategy" for each major stream to maximize net profit. Compare Landfill vs. Recycle vs. Reuse.
+
+    **Output Format (JSON):**
+    {
+      "total_potential_revenue": number,
+      "total_avoided_cost": number,
+      "net_benefit": number,
+      "roi_percentage": number,
+      "strategies": [
+        { 
+           "material": "Steel", 
+           "action": "Sell to scrap yard (Metal Corp)", 
+           "financial_impact": "+$1,200", 
+           "reasoning": "High market demand. Transport cost offset by rebate." 
+        },
+        ...
+      ],
+      "recommendation_summary": "string (concise executive summary)"
+    }
+  `;
+
+  const response = await ai.models.generateContent({
+    model: GeminiModel.FLASH_3,
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          total_potential_revenue: { type: Type.NUMBER },
+          total_avoided_cost: { type: Type.NUMBER },
+          net_benefit: { type: Type.NUMBER },
+          roi_percentage: { type: Type.NUMBER },
+          strategies: {
+            type: Type.ARRAY,
+            items: {
+              type: Type.OBJECT,
+              properties: {
+                material: { type: Type.STRING },
+                action: { type: Type.STRING },
+                financial_impact: { type: Type.STRING },
+                reasoning: { type: Type.STRING }
+              }
+            }
+          },
+          recommendation_summary: { type: Type.STRING }
+        }
+      }
+    }
+  });
+  
+  return JSON.parse(response.text || "{}");
 };
 
 export const predictProjectWaste = async (projectDetails: any) => {
@@ -170,16 +326,16 @@ export const predictEdgeBaselines = async (projectDetails: any) => {
     - Phase: ${projectDetails.construction_phase}
 
     **Task:**
-    1. Estimate the **Baseline Material Quantities** based on the "Standard construction practice prevalent in the region" (EDGE Definition).
+    1. Estimate the **Baseline Material Quantities** (in Tonnes) based on the "Standard construction practice prevalent in the region" (EDGE Definition) and the Gross Floor Area (GFA).
     2. Propose **Improved/Target Quantities** assuming EDGE Best Practices (e.g., MEM01 Concrete >25% GGBS, MEM05 AAC Blocks).
     
-    **Required Streams (Map to EDGE MEM Codes):**
-    - Concrete (MEM01/02)
-    - Steel (MEM01/02/04)
-    - Timber (MEM03/07)
-    - Brick/Block (MEM05/06)
-    - Glass (MEM08)
-    - Insulation (MEM09/10/11)
+    **REQUIRED STREAMS (You MUST include exactly these 6 keys in your response logic for the UI Dashboard):**
+    1. Concrete (MEM01/02)
+    2. Steel (MEM01/02/04)
+    3. Timber (MEM03/07)
+    4. Brick/Block (MEM05/06) - Label as "Brick"
+    5. Glass (MEM08)
+    6. Insulation (MEM09/10/11)
 
     **Output Format:**
     Return strictly a JSON object with this structure:

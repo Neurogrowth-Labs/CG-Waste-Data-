@@ -5,9 +5,10 @@ import {
   FileText, Zap, Recycle, Brain, Loader2, Lock,
   TrafficCone, TrendingUp, DollarSign, UploadCloud, ChevronRight, 
   BarChart3, Box, Layers, HelpCircle, ShieldCheck, FileCheck, Search,
-  ScanLine, ImageIcon, Plus, Trash2, Wand2, Calculator, MessageSquare, ListChecks, Info
+  ScanLine, ImageIcon, Plus, Trash2, Wand2, Calculator, MessageSquare, ListChecks, Info,
+  Maximize2, Wallet, ArrowUpRight, ArrowDownRight, Gavel, AlertTriangle
 } from 'lucide-react';
-import { getEdgeAdvisory, analyzeConstructionPlan, predictEdgeBaselines } from '../services/geminiService';
+import { getEdgeAdvisory, analyzeConstructionPlan, predictEdgeBaselines, generateCostBenefitAnalysis, checkRegulatoryCompliance } from '../services/geminiService';
 import { EdgeProject, EdgeMaterialStream, BimMaterial } from '../types';
 import { supabase } from '../lib/supabaseClient';
 
@@ -191,7 +192,7 @@ const AUDITOR_QA = [
 
 const DigitalEDGE: React.FC = () => {
   const [viewState, setViewState] = useState<'onboarding' | 'analysis'>('onboarding');
-  const [activeTab, setActiveTab] = useState<'calculator' | 'bim' | 'auditor' | 'plan' | 'trail'>('calculator');
+  const [activeTab, setActiveTab] = useState<'calculator' | 'optimization' | 'compliance' | 'bim' | 'auditor' | 'plan' | 'trail'>('calculator');
   
   const [project, setProject] = useState<EdgeProject>({
     project_id: 'new',
@@ -208,6 +209,21 @@ const DigitalEDGE: React.FC = () => {
   const [loadingAdvisory, setLoadingAdvisory] = useState(false);
   const [isForecasting, setIsForecasting] = useState(false);
   const [evidenceCount, setEvidenceCount] = useState(0);
+
+  // Financial Optimization State
+  const [costInputs, setCostInputs] = useState({
+     tippingFee: 120, // $/ton
+     transportCost: 4.5, // $/km
+     landfillDist: 25, // km
+     recyclerDist: 15 // km
+  });
+  const [financials, setFinancials] = useState<any>(null);
+  const [loadingFinancials, setLoadingFinancials] = useState(false);
+
+  // Compliance State
+  const [jurisdiction, setJurisdiction] = useState('California, USA');
+  const [complianceReport, setComplianceReport] = useState<any>(null);
+  const [loadingCompliance, setLoadingCompliance] = useState(false);
   
   // BIM State
   const [bimMaterials, setBimMaterials] = useState<BimMaterial[]>([]);
@@ -354,16 +370,16 @@ const DigitalEDGE: React.FC = () => {
   // --- Logic: BIM Integration ---
   const handleBimUpload = () => {
     setIsProcessingBim(true);
+    // Mock parsing
     setTimeout(() => {
-      // Mock parsing of an IFC file
       const extracted: BimMaterial[] = [
         { id: 'b1', element_name: 'Basic Wall: Cast-in-Place Concrete 300mm', bim_quantity: 4500, unit: 'm3', edge_category: 'Concrete', estimated_waste_rate: 5 },
-        { id: 'b2', element_name: 'Structural Column: Steel W300x150', bim_quantity: 120, unit: 'm3', edge_category: 'Steel', estimated_waste_rate: 15 }, // High offcuts
+        { id: 'b2', element_name: 'Structural Column: Steel W300x150', bim_quantity: 120, unit: 'm3', edge_category: 'Steel', estimated_waste_rate: 15 }, 
         { id: 'b3', element_name: 'Floor: Timber Composite Deck', bim_quantity: 2200, unit: 'm2', edge_category: 'Timber', estimated_waste_rate: 8 },
       ];
       setBimMaterials(extracted);
       setIsProcessingBim(false);
-    }, 2000);
+    }, 1500);
   };
 
   const syncBimToEdge = () => {
@@ -381,8 +397,6 @@ const DigitalEDGE: React.FC = () => {
        if (m.edge_category === 'Timber') totalTimber += (wasteMass * 0.05); // m2 proxy
     });
 
-    // Update streams with BIM data - Only updates IMPROVED quantities
-    // In a real app, this would perform multiple DB updates
     setStreams(prev => prev.map(s => {
        if (s.material_type === 'Concrete') return { ...s, improved_quantity_tons: totalConcrete, source: 'BIM-Derived' };
        if (s.material_type === 'Steel') return { ...s, improved_quantity_tons: totalSteel, source: 'BIM-Derived' };
@@ -418,6 +432,64 @@ const DigitalEDGE: React.FC = () => {
     setIsScanningPlan(false);
   };
 
+  // --- Logic: Financial Optimization ---
+  const runOptimization = async () => {
+    if (streams.length === 0) {
+      alert("Please add material streams first.");
+      return;
+    }
+    setLoadingFinancials(true);
+    setFinancials(null);
+    try {
+      const result = await generateCostBenefitAnalysis(project, streams, costInputs);
+      setFinancials(result);
+    } catch (e) {
+      console.error(e);
+      alert("Optimization failed. Please try again.");
+    }
+    setLoadingFinancials(false);
+  };
+
+  // --- Logic: Compliance Check ---
+  const runComplianceCheck = async () => {
+    if (streams.length === 0) {
+      alert("Please add material streams first.");
+      return;
+    }
+    setLoadingCompliance(true);
+    setComplianceReport(null);
+    try {
+      const result = await checkRegulatoryCompliance(project, streams, jurisdiction);
+      setComplianceReport(result);
+      
+      // PERSIST TO SUPABASE
+      if (project.project_id !== 'new') {
+         const { error: updateError } = await supabase
+            .from('projects')
+            .update({ compliance_score: result.compliance_score })
+            .eq('id', project.project_id);
+         
+         if (updateError) console.error("Score sync failed:", updateError);
+
+         const { data: { user } } = await supabase.auth.getUser();
+         if (user) {
+            await supabase.from('audit_logs').insert({
+               user_id: user.id,
+               project_id: project.project_id,
+               action: `Compliance Audit (${jurisdiction}): ${result.risk_level} Risk`,
+               status: result.compliance_score > 80 ? 'Verified' : 'Flagged',
+               user_role: 'Auditor'
+            });
+         }
+      }
+
+    } catch (e) {
+      console.error(e);
+      alert("Compliance check failed.");
+    }
+    setLoadingCompliance(false);
+  };
+
 
   // --- Logic: Material Efficiency ---
   const calculateEfficiency = () => {
@@ -445,7 +517,6 @@ const DigitalEDGE: React.FC = () => {
     setStreams(prev => prev.map(s => s.material_id === id ? { ...s, [field]: value } : s));
     
     // DB Update
-    // Note: Debouncing recommended for production inputs
     if (field !== 'material_id' && field !== 'source' && field !== 'evidence_status') {
         await supabase.from('edge_material_streams').update({ [field]: value }).eq('id', id);
     }
@@ -461,7 +532,6 @@ const DigitalEDGE: React.FC = () => {
   };
 
   const handleManageDocs = () => {
-    // Simulate document upload process
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.pdf,.png,.jpg';
@@ -567,20 +637,26 @@ const DigitalEDGE: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex space-x-1 bg-slate-200 p-1 rounded-lg w-fit">
-        <button onClick={() => setActiveTab('calculator')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center ${activeTab === 'calculator' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+      <div className="flex space-x-1 bg-slate-200 p-1 rounded-lg w-fit overflow-x-auto">
+        <button onClick={() => setActiveTab('calculator')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center whitespace-nowrap ${activeTab === 'calculator' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
           <Zap className="w-4 h-4 mr-2" /> Efficiency Engine
         </button>
-        <button onClick={() => setActiveTab('bim')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center ${activeTab === 'bim' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+        <button onClick={() => setActiveTab('optimization')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center whitespace-nowrap ${activeTab === 'optimization' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+          <Wallet className="w-4 h-4 mr-2" /> Cost & Revenue
+        </button>
+        <button onClick={() => setActiveTab('compliance')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center whitespace-nowrap ${activeTab === 'compliance' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+          <Gavel className="w-4 h-4 mr-2" /> Compliance
+        </button>
+        <button onClick={() => setActiveTab('bim')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center whitespace-nowrap ${activeTab === 'bim' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
           <Box className="w-4 h-4 mr-2" /> BIM Integrator
         </button>
-        <button onClick={() => setActiveTab('plan')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center ${activeTab === 'plan' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+        <button onClick={() => setActiveTab('plan')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center whitespace-nowrap ${activeTab === 'plan' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
           <ScanLine className="w-4 h-4 mr-2" /> Deep Plan Scanner
         </button>
-        <button onClick={() => setActiveTab('auditor')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center ${activeTab === 'auditor' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+        <button onClick={() => setActiveTab('auditor')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center whitespace-nowrap ${activeTab === 'auditor' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
           <ShieldCheck className="w-4 h-4 mr-2" /> Auditor Guidance
         </button>
-        <button onClick={() => setActiveTab('trail')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center ${activeTab === 'trail' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+        <button onClick={() => setActiveTab('trail')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center whitespace-nowrap ${activeTab === 'trail' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
           <MessageSquare className="w-4 h-4 mr-2" /> Audit Trail
         </button>
       </div>
@@ -590,7 +666,7 @@ const DigitalEDGE: React.FC = () => {
          {/* LEFT PANEL: VARIES BY TAB */}
          <div className="lg:col-span-2 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             
-            {/* TAB: CALCULATOR */}
+            {/* TAB: CALCULATOR (REFACTORED) */}
             {activeTab === 'calculator' && (
               <>
                 <div className="p-4 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
@@ -601,121 +677,429 @@ const DigitalEDGE: React.FC = () => {
                      <Lock className="w-3 h-3 mr-1" /> Baseline Locked
                    </span>
                 </div>
-                <div className="flex-1 overflow-y-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-white text-slate-500 font-medium sticky top-0 z-10 border-b border-slate-100">
-                       <tr>
-                          <th className="px-6 py-3">Material Stream</th>
-                          <th className="px-6 py-3">Category</th>
-                          <th className="px-6 py-3 bg-slate-50/50">Baseline (t)</th>
-                          <th className="px-6 py-3">Improved (t)</th>
-                          <th className="px-6 py-3">Recovery Strategy</th>
-                          <th className="px-6 py-3 text-right">Actions</th>
-                       </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                       {streams.map(stream => {
-                          const isManual = stream.source === 'Manual Input';
-                          return (
-                            <tr key={stream.material_id} className="hover:bg-slate-50 transition-colors">
-                              <td className="px-6 py-4">
-                                  {isManual ? (
-                                    <select 
-                                      value={stream.material_type}
-                                      onChange={(e) => updateStream(stream.material_id, 'material_type', e.target.value)}
-                                      className="w-full border border-slate-300 rounded p-1.5 text-sm bg-white"
-                                    >
-                                      <option value="Concrete">Concrete</option>
-                                      <option value="Steel">Steel</option>
-                                      <option value="Timber">Timber</option>
-                                      <option value="Glass">Glass</option>
-                                      <option value="Plastics">Plastics</option>
-                                      <option value="Brick">Brick</option>
-                                      <option value="Excavation">Excavation</option>
-                                      <option value="Hazardous">Hazardous</option>
-                                    </select>
-                                  ) : (
-                                    <>
-                                      <span className="font-medium text-slate-800 block">{stream.material_type}</span>
-                                      {stream.source === 'BIM-Derived' ? (
-                                        <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">BIM VERIFIED</span>
-                                      ) : (
-                                        <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded font-bold">AI FORECAST</span>
-                                      )}
-                                    </>
-                                  )}
-                              </td>
-                              <td className="px-6 py-4">
-                                  {isManual ? (
-                                    <select 
-                                      value={stream.category}
-                                      onChange={(e) => updateStream(stream.material_id, 'category', e.target.value)}
-                                      className="w-full border border-slate-300 rounded p-1.5 text-sm bg-white"
-                                    >
-                                      <option value="Structure">Structure</option>
-                                      <option value="Envelope">Envelope</option>
-                                      <option value="Finish">Finish</option>
-                                      <option value="Site">Site</option>
-                                    </select>
-                                  ) : (
-                                    <span className="text-slate-500">{stream.category}</span>
-                                  )}
-                              </td>
-                              <td className="px-6 py-4 bg-slate-50/50 font-mono text-slate-500">
-                                  {isManual ? (
-                                    <input 
-                                      type="number" 
-                                      value={stream.baseline_quantity_tons} 
-                                      onChange={(e) => updateStream(stream.material_id, 'baseline_quantity_tons', Number(e.target.value))} 
-                                      className="w-20 px-2 py-1 border rounded text-slate-900 font-medium" 
-                                    />
-                                  ) : (
-                                    stream.baseline_quantity_tons.toFixed(1)
-                                  )}
-                              </td>
-                              <td className="px-6 py-4">
-                                  <input type="number" value={stream.improved_quantity_tons}
-                                    onChange={(e) => updateStream(stream.material_id, 'improved_quantity_tons', Number(e.target.value))}
-                                    className="w-20 px-2 py-1 border rounded text-slate-900 font-medium" />
-                              </td>
-                              <td className="px-6 py-4">
-                                  <div className="flex flex-col space-y-2">
-                                    <div className="flex items-center justify-between">
-                                        <span className="text-xs text-slate-500">Div. Rate:</span>
-                                        <span className={`text-xs font-bold ${stream.recovery_percentage >= 40 ? 'text-green-600' : 'text-slate-500'}`}>{stream.recovery_percentage}%</span>
-                                    </div>
-                                    <input type="range" min="0" max="100" step="5" value={stream.recovery_percentage}
-                                      onChange={(e) => updateStream(stream.material_id, 'recovery_percentage', Number(e.target.value))}
-                                      className="h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-green-600" />
-                                    <select className="text-xs border rounded p-1" value={stream.disposal_method}
-                                        onChange={(e) => updateStream(stream.material_id, 'disposal_method', e.target.value)}>
-                                        <option value="Landfill">Landfill</option>
-                                        <option value="Recycle">Recycle</option>
-                                        <option value="Reuse">Reuse</option>
-                                    </select>
-                                  </div>
-                              </td>
-                              <td className="px-6 py-4 text-right">
-                                  <button onClick={() => removeStream(stream.material_id)} className="text-slate-400 hover:text-red-500 transition-colors p-1.5 rounded-full hover:bg-slate-100">
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                              </td>
-                            </tr>
-                          );
-                       })}
-                    </tbody>
-                  </table>
+                {/* AI Baseline Snapshot */}
+                <div className="px-6 py-4 bg-slate-50 border-b border-slate-100">
+                   <h4 className="text-xs font-bold text-slate-500 uppercase mb-3 flex items-center">
+                      <Brain className="w-3 h-3 mr-1.5" /> AI Baseline Snapshot
+                   </h4>
+                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+                      {['Concrete', 'Steel', 'Timber', 'Brick', 'Glass', 'Insulation'].map(mat => {
+                         const stream = streams.find(s => s.material_type.includes(mat) || (mat === 'Brick' && (s.material_type.includes('Brick') || s.material_type.includes('Block'))));
+                         const val = stream ? stream.baseline_quantity_tons : 0;
+                         return (
+                           <div key={mat} className="bg-white border border-slate-200 p-2 rounded-lg flex flex-col items-center text-center shadow-sm hover:border-slate-300 transition-colors">
+                              <span className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">{mat}</span>
+                              <span className="text-base font-bold text-slate-700">{val.toFixed(0)}</span>
+                              <span className="text-[9px] text-slate-400">tonnes</span>
+                           </div>
+                         )
+                      })}
+                   </div>
                 </div>
-                {/* Add Stream Button */}
-                <div className="p-4 border-t border-slate-100 bg-white">
-                  <button 
-                    onClick={addStream}
-                    className="w-full py-2 border-2 border-dashed border-slate-300 rounded-lg text-slate-500 hover:text-green-600 hover:border-green-400 hover:bg-green-50 transition-all flex items-center justify-center font-medium text-sm"
-                  >
-                    <Plus className="w-4 h-4 mr-2" /> Add Material Stream
-                  </button>
+                <div className="flex-1 overflow-y-auto bg-slate-50/50 p-4 space-y-3">
+                   {streams.map(stream => {
+                     const isManual = stream.source === 'Manual Input';
+                     return (
+                       <div key={stream.material_id} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col md:flex-row items-center gap-4 hover:shadow-md transition-shadow">
+                          {/* 1. Material Info */}
+                          <div className="flex-1 w-full md:w-auto">
+                             <div className="flex items-center justify-between mb-1">
+                                {isManual ? (
+                                  <select 
+                                    value={stream.material_type}
+                                    onChange={(e) => updateStream(stream.material_id, 'material_type', e.target.value)}
+                                    className="border border-slate-300 rounded p-1 text-sm font-bold bg-white outline-none"
+                                  >
+                                    <option value="Concrete">Concrete</option>
+                                    <option value="Steel">Steel</option>
+                                    <option value="Timber">Timber</option>
+                                    <option value="Glass">Glass</option>
+                                    <option value="Plastics">Plastics</option>
+                                    <option value="Brick">Brick</option>
+                                    <option value="Hazardous">Hazardous</option>
+                                  </select>
+                                ) : (
+                                  <span className="font-bold text-slate-800 text-base">{stream.material_type}</span>
+                                )}
+                                {stream.source === 'BIM-Derived' && <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 rounded font-bold">BIM</span>}
+                                {stream.source === 'Estimated' && <span className="text-[10px] bg-purple-100 text-purple-700 px-1.5 rounded font-bold">AI</span>}
+                             </div>
+                             <div className="text-xs text-slate-500 flex items-center">
+                               {isManual ? (
+                                 <select value={stream.category} onChange={(e) => updateStream(stream.material_id, 'category', e.target.value)} className="border-none bg-transparent p-0 outline-none cursor-pointer hover:text-slate-700">
+                                   <option value="Structure">Structure</option>
+                                   <option value="Envelope">Envelope</option>
+                                   <option value="Finish">Finish</option>
+                                 </select>
+                               ) : stream.category}
+                             </div>
+                          </div>
+
+                          {/* 2. Quantities (Baseline vs Improved) */}
+                          <div className="flex items-center space-x-4 bg-slate-50 rounded-lg p-2 border border-slate-100">
+                             <div className="flex flex-col items-center px-2 border-r border-slate-200">
+                               <span className="text-[10px] font-medium text-slate-400 uppercase">Baseline</span>
+                               <div className="flex items-baseline">
+                                 {isManual ? (
+                                   <input 
+                                     type="number" 
+                                     value={stream.baseline_quantity_tons}
+                                     onChange={(e) => updateStream(stream.material_id, 'baseline_quantity_tons', Number(e.target.value))}
+                                     className="w-16 bg-transparent text-center font-bold text-slate-600 outline-none border-b border-dashed border-slate-300 focus:border-green-500"
+                                   />
+                                 ) : (
+                                   <span className="font-bold text-slate-600">{stream.baseline_quantity_tons.toFixed(1)}</span>
+                                 )}
+                                 <span className="text-[10px] text-slate-400 ml-1">t</span>
+                               </div>
+                             </div>
+                             <div className="flex flex-col items-center px-2">
+                               <span className="text-[10px] font-medium text-green-600 uppercase">Improved</span>
+                               <div className="flex items-baseline">
+                                 <input 
+                                   type="number"
+                                   value={stream.improved_quantity_tons}
+                                   onChange={(e) => updateStream(stream.material_id, 'improved_quantity_tons', Number(e.target.value))}
+                                   className="w-16 bg-white border border-green-200 rounded px-1 text-center font-bold text-green-700 outline-none focus:ring-2 focus:ring-green-500"
+                                 />
+                                 <span className="text-[10px] text-green-600 ml-1">t</span>
+                               </div>
+                             </div>
+                          </div>
+
+                          {/* 3. Strategy & Status */}
+                          <div className="flex-1 min-w-[200px] flex flex-col space-y-2">
+                             <div className="flex justify-between items-center text-xs">
+                               <span className="text-slate-500">Recovery: <strong className="text-slate-800">{stream.recovery_percentage}%</strong></span>
+                               <select 
+                                 value={stream.disposal_method}
+                                 onChange={(e) => updateStream(stream.material_id, 'disposal_method', e.target.value)}
+                                 className="bg-white border border-slate-200 rounded px-1.5 py-0.5 text-xs outline-none"
+                               >
+                                 <option value="Landfill">Landfill</option>
+                                 <option value="Recycle">Recycle</option>
+                                 <option value="Reuse">Reuse</option>
+                               </select>
+                             </div>
+                             <input 
+                               type="range" min="0" max="100" step="5" 
+                               value={stream.recovery_percentage}
+                               onChange={(e) => updateStream(stream.material_id, 'recovery_percentage', Number(e.target.value))}
+                               className="w-full h-1.5 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-green-600"
+                             />
+                             <div className="flex justify-between items-center">
+                                <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
+                                  stream.evidence_status === 'Verified' ? 'bg-green-100 text-green-700' :
+                                  stream.evidence_status === 'Uploaded' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-slate-200 text-slate-500'
+                                }`}>
+                                   {stream.evidence_status === 'Pending' ? 'Evidence Pending' : stream.evidence_status}
+                                </span>
+                             </div>
+                          </div>
+
+                          {/* 4. Actions */}
+                          <button onClick={() => removeStream(stream.material_id)} className="text-slate-300 hover:text-red-500 transition-colors p-2">
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                       </div>
+                     )
+                   })}
+                   <div className="pt-2">
+                      <button 
+                        onClick={addStream}
+                        className="w-full py-3 border-2 border-dashed border-slate-300 rounded-xl text-slate-500 hover:text-green-600 hover:border-green-400 hover:bg-green-50 transition-all flex items-center justify-center font-medium text-sm"
+                      >
+                        <Plus className="w-4 h-4 mr-2" /> Add Material Stream
+                      </button>
+                   </div>
                 </div>
               </>
+            )}
+
+            {/* TAB: COMPLIANCE INTELLIGENCE */}
+            {activeTab === 'compliance' && (
+              <div className="flex-1 flex flex-col h-full bg-slate-50">
+                 <div className="p-6 bg-white border-b border-slate-200">
+                    <div className="flex justify-between items-start mb-6">
+                       <div>
+                          <h3 className="text-lg font-bold text-slate-800 flex items-center">
+                             <Gavel className="w-5 h-5 mr-2 text-blue-600" /> Compliance Intelligence
+                          </h3>
+                          <p className="text-sm text-slate-500 mt-1">
+                             Auto-audit against local regulations and detect non-compliance risks.
+                          </p>
+                       </div>
+                       <button 
+                         onClick={runComplianceCheck}
+                         disabled={loadingCompliance}
+                         className="px-6 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 flex items-center disabled:opacity-50 shadow-md transition-all"
+                       >
+                         {loadingCompliance ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <ShieldCheck className="w-4 h-4 mr-2" />}
+                         {loadingCompliance ? 'Auditing...' : 'Run Compliance Audit'}
+                       </button>
+                    </div>
+
+                    <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
+                       <label className="block text-xs font-semibold text-slate-500 mb-2 uppercase">Jurisdiction for Regulatory Check</label>
+                       <select 
+                         value={jurisdiction}
+                         onChange={(e) => setJurisdiction(e.target.value)}
+                         className="w-full px-4 py-2 border border-slate-300 rounded-lg text-sm bg-white"
+                       >
+                          <option value="California, USA">California, USA (CalGreen)</option>
+                          <option value="New York, USA">New York, USA</option>
+                          <option value="London, UK">London, UK (SWMP)</option>
+                          <option value="European Union">European Union (EU Waste Framework)</option>
+                          <option value="Dubai, UAE">Dubai, UAE (Green Building Regs)</option>
+                       </select>
+                    </div>
+                 </div>
+
+                 <div className="flex-1 p-6 overflow-y-auto">
+                    {!complianceReport && !loadingCompliance && (
+                       <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
+                          <FileCheck className="w-16 h-16 mb-4" />
+                          <p>Select jurisdiction and run audit.</p>
+                       </div>
+                    )}
+
+                    {loadingCompliance && (
+                       <div className="h-full flex flex-col items-center justify-center text-slate-500">
+                          <Loader2 className="w-12 h-12 animate-spin text-blue-600 mb-4" />
+                          <p>Analyzing regulations for {jurisdiction}...</p>
+                       </div>
+                    )}
+
+                    {complianceReport && (
+                       <div className="space-y-6 animate-fade-in">
+                          {/* Score Cards */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <div className="bg-white p-5 rounded-xl shadow-sm border border-slate-200 flex items-center justify-between">
+                                <div>
+                                   <span className="text-xs font-bold text-slate-400 uppercase">Compliance Score</span>
+                                   <div className="text-3xl font-bold text-slate-800 mt-1">{complianceReport.compliance_score}/100</div>
+                                </div>
+                                <div className={`w-16 h-16 rounded-full flex items-center justify-center border-4 ${
+                                   complianceReport.compliance_score > 80 ? 'border-green-500 text-green-600' : 
+                                   complianceReport.compliance_score > 50 ? 'border-amber-500 text-amber-600' : 
+                                   'border-red-500 text-red-600'
+                                }`}>
+                                   <span className="font-bold text-lg">{complianceReport.compliance_score}</span>
+                                </div>
+                             </div>
+                             <div className={`p-5 rounded-xl shadow-sm border flex items-center justify-between ${
+                                complianceReport.risk_level === 'Low' ? 'bg-green-50 border-green-200' : 
+                                complianceReport.risk_level === 'Critical' ? 'bg-red-50 border-red-200' :
+                                'bg-amber-50 border-amber-200'
+                             }`}>
+                                <div>
+                                   <span className={`text-xs font-bold uppercase ${
+                                      complianceReport.risk_level === 'Low' ? 'text-green-600' : 
+                                      complianceReport.risk_level === 'Critical' ? 'text-red-600' :
+                                      'text-amber-600'
+                                   }`}>Risk Level</span>
+                                   <div className={`text-2xl font-bold mt-1 ${
+                                      complianceReport.risk_level === 'Low' ? 'text-green-800' : 
+                                      complianceReport.risk_level === 'Critical' ? 'text-red-800' :
+                                      'text-amber-800'
+                                   }`}>{complianceReport.risk_level}</div>
+                                </div>
+                                <AlertCircle className={`w-8 h-8 ${
+                                   complianceReport.risk_level === 'Low' ? 'text-green-500' : 
+                                   complianceReport.risk_level === 'Critical' ? 'text-red-500' :
+                                   'text-amber-500'
+                                }`} />
+                             </div>
+                          </div>
+
+                          {/* Violations & Permits Grid */}
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                             {/* Violations */}
+                             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="px-4 py-3 bg-red-50 border-b border-red-100 flex items-center">
+                                   <AlertTriangle className="w-4 h-4 text-red-600 mr-2" />
+                                   <h4 className="font-bold text-red-800 text-sm">Detected Violations</h4>
+                                </div>
+                                <div className="divide-y divide-slate-100">
+                                   {complianceReport.violations?.length > 0 ? complianceReport.violations.map((v: any, i: number) => (
+                                      <div key={i} className="p-4">
+                                         <div className="flex justify-between items-start mb-1">
+                                            <span className="font-bold text-slate-800 text-sm">{v.regulation}</span>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded font-bold uppercase ${
+                                               v.severity === 'High' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                                            }`}>{v.severity}</span>
+                                         </div>
+                                         <p className="text-xs text-slate-600 mb-2">{v.description}</p>
+                                         <div className="bg-slate-50 p-2 rounded text-xs text-slate-500">
+                                            <strong className="text-slate-700">Fix:</strong> {v.remediation}
+                                         </div>
+                                      </div>
+                                   )) : (
+                                      <div className="p-6 text-center text-slate-400 text-sm">No active violations detected.</div>
+                                   )}
+                                </div>
+                             </div>
+
+                             {/* Permits */}
+                             <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                                <div className="px-4 py-3 bg-blue-50 border-b border-blue-100 flex items-center">
+                                   <FileText className="w-4 h-4 text-blue-600 mr-2" />
+                                   <h4 className="font-bold text-blue-800 text-sm">Required Permits</h4>
+                                </div>
+                                <div className="divide-y divide-slate-100">
+                                   {complianceReport.required_permits?.length > 0 ? complianceReport.required_permits.map((p: any, i: number) => (
+                                      <div key={i} className="p-4 flex items-center justify-between">
+                                         <div>
+                                            <p className="font-bold text-slate-800 text-sm">{p.name}</p>
+                                            <p className="text-xs text-slate-500">{p.reason}</p>
+                                         </div>
+                                         <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${
+                                            p.status === 'Missing' ? 'bg-red-100 text-red-700' : 'bg-blue-100 text-blue-700'
+                                         }`}>{p.status}</span>
+                                      </div>
+                                   )) : (
+                                      <div className="p-6 text-center text-slate-400 text-sm">No special permits flagged.</div>
+                                   )}
+                                </div>
+                             </div>
+                          </div>
+
+                          {/* Regulatory Report */}
+                          <div className="bg-slate-800 rounded-xl shadow-md border border-slate-700 overflow-hidden">
+                             <div className="px-6 py-4 border-b border-slate-600 bg-slate-900/50 flex justify-between items-center">
+                                <h4 className="font-bold text-white flex items-center text-sm">
+                                   <FileText className="w-4 h-4 mr-2 text-green-400" /> Auto-Generated Regulatory Report
+                                </h4>
+                                <button className="text-xs text-slate-400 hover:text-white transition-colors">Copy Report</button>
+                             </div>
+                             <div className="p-6 text-slate-300 text-sm leading-relaxed whitespace-pre-wrap font-mono">
+                                {complianceReport.regulatory_report}
+                             </div>
+                          </div>
+                       </div>
+                    )}
+                 </div>
+              </div>
+            )}
+
+            {/* TAB: COST & REVENUE OPTIMIZATION (NEW) */}
+            {activeTab === 'optimization' && (
+              <div className="flex-1 flex flex-col h-full bg-slate-50">
+                 <div className="p-6 bg-white border-b border-slate-200">
+                    <div className="flex justify-between items-start mb-6">
+                       <div>
+                          <h3 className="text-lg font-bold text-slate-800 flex items-center">
+                             <Wallet className="w-5 h-5 mr-2 text-green-600" /> Cost & Revenue Optimization
+                          </h3>
+                          <p className="text-sm text-slate-500 mt-1">
+                             Use Reinforcement Learning Intelligence to analyze disposal costs, rebates, and transport logistics.
+                          </p>
+                       </div>
+                       <button 
+                         onClick={runOptimization}
+                         disabled={loadingFinancials}
+                         className="px-6 py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 flex items-center disabled:opacity-50 shadow-md transition-all"
+                       >
+                         {loadingFinancials ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Brain className="w-4 h-4 mr-2" />}
+                         {loadingFinancials ? 'Optimizing...' : 'Run Analysis'}
+                       </button>
+                    </div>
+
+                    {/* Inputs Grid */}
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-xl border border-slate-200">
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">Landfill Tipping Fee ($/t)</label>
+                          <input type="number" value={costInputs.tippingFee} onChange={e => setCostInputs({...costInputs, tippingFee: Number(e.target.value)})} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                       </div>
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">Transport Cost ($/km)</label>
+                          <input type="number" value={costInputs.transportCost} onChange={e => setCostInputs({...costInputs, transportCost: Number(e.target.value)})} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                       </div>
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">Dist. to Landfill (km)</label>
+                          <input type="number" value={costInputs.landfillDist} onChange={e => setCostInputs({...costInputs, landfillDist: Number(e.target.value)})} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                       </div>
+                       <div>
+                          <label className="block text-xs font-semibold text-slate-500 mb-1">Dist. to Recycler (km)</label>
+                          <input type="number" value={costInputs.recyclerDist} onChange={e => setCostInputs({...costInputs, recyclerDist: Number(e.target.value)})} className="w-full px-3 py-2 border border-slate-300 rounded-lg text-sm" />
+                       </div>
+                    </div>
+                 </div>
+
+                 <div className="flex-1 p-6 overflow-y-auto">
+                    {!financials && !loadingFinancials && (
+                       <div className="h-full flex flex-col items-center justify-center text-slate-400 opacity-60">
+                          <BarChart3 className="w-16 h-16 mb-4" />
+                          <p>Run analysis to see financial projections.</p>
+                       </div>
+                    )}
+                    
+                    {loadingFinancials && (
+                       <div className="h-full flex flex-col items-center justify-center text-slate-500">
+                          <Loader2 className="w-12 h-12 animate-spin text-green-600 mb-4" />
+                          <p>Analyzing market rates and logistics...</p>
+                       </div>
+                    )}
+
+                    {financials && (
+                       <div className="space-y-6 animate-fade-in">
+                          {/* Financial Cards */}
+                          <div className="grid grid-cols-3 gap-4">
+                             <div className="bg-white p-4 rounded-xl shadow-sm border border-green-100">
+                                <p className="text-xs text-slate-500 uppercase font-bold">Total Potential Revenue</p>
+                                <h3 className="text-2xl font-bold text-green-600 mt-1">${financials.total_potential_revenue?.toLocaleString()}</h3>
+                                <p className="text-[10px] text-green-600 flex items-center mt-1"><ArrowUpRight className="w-3 h-3 mr-1" /> Salvage & Rebates</p>
+                             </div>
+                             <div className="bg-white p-4 rounded-xl shadow-sm border border-blue-100">
+                                <p className="text-xs text-slate-500 uppercase font-bold">Avoided Disposal Cost</p>
+                                <h3 className="text-2xl font-bold text-blue-600 mt-1">${financials.total_avoided_cost?.toLocaleString()}</h3>
+                                <p className="text-[10px] text-blue-600 flex items-center mt-1"><ArrowDownRight className="w-3 h-3 mr-1" /> Tipping Fees Saved</p>
+                             </div>
+                             <div className="bg-slate-800 p-4 rounded-xl shadow-md border border-slate-700">
+                                <p className="text-xs text-slate-400 uppercase font-bold">Net Financial Benefit</p>
+                                <h3 className="text-2xl font-bold text-white mt-1">${financials.net_benefit?.toLocaleString()}</h3>
+                                <p className="text-[10px] text-emerald-400 flex items-center mt-1">ROI: {financials.roi_percentage}%</p>
+                             </div>
+                          </div>
+
+                          {/* Strategies List */}
+                          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+                             <div className="px-6 py-4 border-b border-slate-100 bg-slate-50/50">
+                                <h4 className="font-bold text-slate-800">Optimal Disposal Strategies</h4>
+                             </div>
+                             <div className="divide-y divide-slate-100">
+                                {financials.strategies?.map((strat: any, idx: number) => (
+                                   <div key={idx} className="p-4 flex items-start space-x-4 hover:bg-slate-50 transition-colors">
+                                      <div className="p-2 bg-green-50 rounded-lg text-green-600 mt-1">
+                                         <Recycle className="w-4 h-4" />
+                                      </div>
+                                      <div className="flex-1">
+                                         <div className="flex justify-between items-start">
+                                            <h5 className="font-bold text-slate-800 text-sm">{strat.material}</h5>
+                                            <span className="text-sm font-bold text-green-600">{strat.financial_impact}</span>
+                                         </div>
+                                         <p className="text-sm text-slate-600 mt-1">{strat.action}</p>
+                                         <p className="text-xs text-slate-400 mt-1 italic">"{strat.reasoning}"</p>
+                                      </div>
+                                   </div>
+                                ))}
+                             </div>
+                          </div>
+
+                          {/* Executive Summary */}
+                          <div className="bg-purple-50 rounded-xl p-5 border border-purple-100">
+                             <h4 className="font-bold text-purple-900 text-sm mb-2 flex items-center">
+                                <Brain className="w-4 h-4 mr-2" /> Strategic Recommendation
+                             </h4>
+                             <p className="text-sm text-purple-800 leading-relaxed">
+                                {financials.recommendation_summary}
+                             </p>
+                          </div>
+                       </div>
+                    )}
+                 </div>
+              </div>
             )}
 
             {/* TAB: BIM INTEGRATOR */}
@@ -911,11 +1295,11 @@ const DigitalEDGE: React.FC = () => {
                  <Lock className="w-3 h-3 mr-1" /> Auditor Rules
                </h4>
                <div className="space-y-2">
-                  {score < 20 && (
+                  {score < (project.edge_target_level === 'Zero Carbon' ? 100 : project.edge_target_level === 'Advanced' ? 40 : 20) && (
                     <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start">
                        <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 mr-2 shrink-0" />
                        <div className="text-xs text-red-800">
-                         <strong>Certification Risk:</strong><br/>Efficiency must be > 20%. Current strategy fails.
+                         <strong>Certification Risk:</strong><br/>Efficiency must be > {project.edge_target_level === 'Zero Carbon' ? 100 : project.edge_target_level === 'Advanced' ? 40 : 20}%. Current strategy fails.
                        </div>
                     </div>
                   )}
