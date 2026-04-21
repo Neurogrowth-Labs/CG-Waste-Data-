@@ -2,10 +2,15 @@
 export enum View {
   DASHBOARD = 'DASHBOARD',
   PROJECTS = 'PROJECTS',
+  FIELD_OPS = 'FIELD_OPS',
   TRACKING = 'TRACKING',
   INTELLIGENCE = 'INTELLIGENCE',
   CREATIVE = 'CREATIVE',
   EDGE = 'EDGE',
+  COMPLIANCE = 'COMPLIANCE',
+  TWIN = 'TWIN',
+  MARKETPLACE = 'MARKETPLACE',
+  EDUCATION = 'EDUCATION',
   SETTINGS = 'SETTINGS'
 }
 
@@ -94,5 +99,9 @@ export interface BimMaterial {
 declare global {
   interface Window {
     webkitAudioContext: typeof AudioContext;
+    aistudio?: {
+      hasSelectedApiKey: () => Promise<boolean>;
+      openSelectKey: () => Promise<void>;
+    };
   }
 }

@@ -6,6 +6,12 @@ import Intelligence from './components/Intelligence';
 import CreativeStudio from './components/CreativeStudio';
 import LiveAssistant from './components/LiveAssistant';
 import DigitalEDGE from './components/DigitalEDGE';
+import Settings from './components/Settings';
+import FieldOperations from './components/FieldOperations';
+import ComplianceEngine from './components/ComplianceEngine';
+import DigitalTwin from './components/DigitalTwin';
+import Marketplace from './components/Marketplace';
+import EducationHub from './components/EducationHub';
 import { RealtimeNotifications } from './components/RealtimeNotifications';
 import { ProjectSourceWorkflow, WasteTrackingWorkflow } from './components/Workflows';
 import { Auth } from './components/Auth';
@@ -21,9 +27,16 @@ const ProjectsView = () => {
   // Initial Fetch
   useEffect(() => {
     const fetchProjects = async () => {
-      const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-      if (!error && data) setProjects(data);
-      setLoading(false);
+      try {
+        const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        if (data) setProjects(data);
+      } catch (e) {
+        console.error("Error fetching projects:", e);
+        // Fallback or empty state is handled by the UI below
+      } finally {
+        setLoading(false);
+      }
     };
     fetchProjects();
 
@@ -140,9 +153,15 @@ const TrackingView = () => {
    useEffect(() => {
      // Fetch existing manifests
      const fetchManifests = async () => {
-       const { data } = await supabase.from('waste_manifests').select('*').order('created_at', { ascending: false });
-       if (data) setManifests(data);
-       setLoading(false);
+       try {
+         const { data, error } = await supabase.from('waste_manifests').select('*').order('created_at', { ascending: false });
+         if (error) throw error;
+         if (data) setManifests(data);
+       } catch (e) {
+         console.error("Error fetching manifests:", e);
+       } finally {
+         setLoading(false);
+       }
      };
      fetchManifests();
 
@@ -253,12 +272,21 @@ const App: React.FC = () => {
   const [loadingSession, setLoadingSession] = useState(true);
 
   useEffect(() => {
-    // 1. Check for active session on load
+    // 1. Check for active session on load with robust error handling
     const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session?.user) {
-        await fetchProfile(session.user.id, session.user.email!);
-      } else {
+      try {
+        const { data, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        
+        if (data.session?.user) {
+          await fetchProfile(data.session.user.id, data.session.user.email!);
+        } else {
+          // No session found, stop loading to show Auth screen
+          setLoadingSession(false);
+        }
+      } catch (err) {
+        console.warn("Supabase session check failed - potential network or config issue:", err);
+        // Ensure we stop loading so the user isn't stuck on a white screen
         setLoadingSession(false);
       }
     };
@@ -268,6 +296,7 @@ const App: React.FC = () => {
     // 2. Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === 'SIGNED_IN' && session?.user) {
+        setLoadingSession(true);
         await fetchProfile(session.user.id, session.user.email!);
       } else if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
@@ -286,6 +315,7 @@ const App: React.FC = () => {
         .eq('id', userId)
         .single();
       
+      // Even if profile fetch fails, we can populate basic user info from auth or defaults
       if (data) {
         setCurrentUser({
           name: data.full_name || 'User',
@@ -295,16 +325,55 @@ const App: React.FC = () => {
           jurisdiction: data.jurisdiction || '',
           standards: data.standards || []
         });
+      } else {
+         // Fallback if profile doesn't exist yet
+         setCurrentUser({
+          name: 'New User',
+          email: email,
+          role: 'manager',
+          organization: '',
+          jurisdiction: '',
+          standards: []
+        });
       }
     } catch (e) {
       console.error("Profile fetch error", e);
+      // Fallback to allow app usage
+      setCurrentUser({
+          name: 'User (Offline)',
+          email: email,
+          role: 'manager',
+          organization: 'Offline Mode',
+          jurisdiction: '',
+          standards: []
+      });
     } finally {
       setLoadingSession(false);
     }
   };
 
+  const refreshProfile = async () => {
+    if (!currentUser) return;
+    setLoadingSession(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user && user.email) {
+      await fetchProfile(user.id, user.email);
+    }
+    setLoadingSession(false);
+  };
+
   const handleLogout = async () => {
-    await supabase.auth.signOut();
+    try {
+      await supabase.auth.signOut();
+    } catch (e) {
+      console.error("Sign out error", e);
+      setCurrentUser(null); // Force local logout
+    }
+  };
+
+  const handleManualLogin = (user: User) => {
+    setCurrentUser(user);
+    setLoadingSession(false);
   };
 
   if (loadingSession) {
@@ -314,17 +383,23 @@ const App: React.FC = () => {
   }
 
   if (!currentUser) {
-    return <Auth onLogin={() => {}} />;
+    return <Auth onLogin={handleManualLogin} />;
   }
 
   const renderContent = () => {
     switch (currentView) {
       case View.DASHBOARD: return <Dashboard initialRole={currentUser.role} />;
-      case View.INTELLIGENCE: return <Intelligence />;
-      case View.CREATIVE: return <CreativeStudio />;
-      case View.EDGE: return <DigitalEDGE />;
+      case View.FIELD_OPS: return <FieldOperations />;
       case View.PROJECTS: return <ProjectsView />;
       case View.TRACKING: return <TrackingView />;
+      case View.TWIN: return <DigitalTwin />;
+      case View.INTELLIGENCE: return <Intelligence />;
+      case View.EDGE: return <DigitalEDGE />;
+      case View.COMPLIANCE: return <ComplianceEngine />;
+      case View.MARKETPLACE: return <Marketplace />;
+      case View.EDUCATION: return <EducationHub />;
+      case View.CREATIVE: return <CreativeStudio />;
+      case View.SETTINGS: return <Settings user={currentUser} onLogout={handleLogout} onProfileUpdate={refreshProfile} />;
       default: return <div className="text-slate-400">Section under development</div>;
     }
   };

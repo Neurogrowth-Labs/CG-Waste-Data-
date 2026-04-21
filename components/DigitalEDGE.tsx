@@ -242,7 +242,8 @@ const DigitalEDGE: React.FC = () => {
     setIsForecasting(true);
 
     try {
-        const { data: { user } } = await supabase.auth.getUser();
+        const { data } = await supabase.auth.getUser();
+        const user = data.user;
         
         // 1. Forecast Data
         const forecast = await predictEdgeBaselines(project);
@@ -319,21 +320,26 @@ const DigitalEDGE: React.FC = () => {
             
             setStreams(mappedStreams);
             setViewState('analysis');
+        } else {
+            // Local state fallback if no user
+             setStreams(finalStreams.map((s, i) => ({ ...s, material_id: `local-${i}`, evidence_status: 'Pending' })));
+             setViewState('analysis');
         }
 
     } catch (error) {
         console.error("Forecast/Save failed", error);
-        alert("Error saving project. Check console.");
+        // Ensure UI proceeds even if save fails
+        setViewState('analysis');
     } finally {
         setIsForecasting(false);
     }
   };
 
   const addStream = async () => {
-    if (project.project_id === 'new') return;
-    
+    // Optimistic Add for UI responsiveness
+    const tempId = `temp-${Date.now()}`;
     const newStream = {
-      project_id: project.project_id,
+      project_id: project.project_id === 'new' ? undefined : project.project_id,
       material_type: 'Concrete',
       category: 'Structure',
       baseline_quantity_tons: 0,
@@ -343,28 +349,29 @@ const DigitalEDGE: React.FC = () => {
       evidence_status: 'Pending',
       source: 'Manual Input'
     };
-
-    const { data, error } = await supabase.from('edge_material_streams').insert(newStream).select().single();
     
-    if (data) {
-        const s: EdgeMaterialStream = {
-           material_id: data.id,
-           material_type: data.material_type,
-           category: data.category,
-           baseline_quantity_tons: data.baseline_quantity_tons,
-           improved_quantity_tons: data.improved_quantity_tons,
-           disposal_method: data.disposal_method,
-           recovery_percentage: data.recovery_percentage,
-           evidence_status: data.evidence_status,
-           source: data.source
-        };
-        setStreams([...streams, s]);
+    // Add to local state immediately
+    const s: any = { ...newStream, material_id: tempId };
+    setStreams([...streams, s]);
+
+    if (project.project_id !== 'new') {
+        try {
+            const { data, error } = await supabase.from('edge_material_streams').insert(newStream).select().single();
+            if (data) {
+                // Replace temp ID with real ID
+                setStreams(prev => prev.map(item => item.material_id === tempId ? { ...item, material_id: data.id } : item));
+            }
+        } catch (e) {
+            console.error("Failed to persist stream", e);
+        }
     }
   };
 
   const removeStream = async (id: string) => {
-    await supabase.from('edge_material_streams').delete().eq('id', id);
     setStreams(prev => prev.filter(s => s.material_id !== id));
+    if (!id.startsWith('temp-') && !id.startsWith('local-')) {
+       await supabase.from('edge_material_streams').delete().eq('id', id);
+    }
   };
 
   // --- Logic: BIM Integration ---
@@ -464,22 +471,26 @@ const DigitalEDGE: React.FC = () => {
       
       // PERSIST TO SUPABASE
       if (project.project_id !== 'new') {
-         const { error: updateError } = await supabase
-            .from('projects')
-            .update({ compliance_score: result.compliance_score })
-            .eq('id', project.project_id);
-         
-         if (updateError) console.error("Score sync failed:", updateError);
+         try {
+             const { error: updateError } = await supabase
+                .from('projects')
+                .update({ compliance_score: result.compliance_score })
+                .eq('id', project.project_id);
+             
+             if (updateError) console.warn("Score sync failed:", updateError);
 
-         const { data: { user } } = await supabase.auth.getUser();
-         if (user) {
-            await supabase.from('audit_logs').insert({
-               user_id: user.id,
-               project_id: project.project_id,
-               action: `Compliance Audit (${jurisdiction}): ${result.risk_level} Risk`,
-               status: result.compliance_score > 80 ? 'Verified' : 'Flagged',
-               user_role: 'Auditor'
-            });
+             const { data } = await supabase.auth.getUser();
+             if (data?.user) {
+                await supabase.from('audit_logs').insert({
+                   user_id: data.user.id,
+                   project_id: project.project_id,
+                   action: `Compliance Audit (${jurisdiction}): ${result.risk_level} Risk`,
+                   status: result.compliance_score > 80 ? 'Verified' : 'Flagged',
+                   user_role: 'Auditor'
+                });
+             }
+         } catch(e) {
+             console.warn("Backend unavailable for logging", e);
          }
       }
 
@@ -516,9 +527,11 @@ const DigitalEDGE: React.FC = () => {
     // Optimistic Update
     setStreams(prev => prev.map(s => s.material_id === id ? { ...s, [field]: value } : s));
     
-    // DB Update
-    if (field !== 'material_id' && field !== 'source' && field !== 'evidence_status') {
-        await supabase.from('edge_material_streams').update({ [field]: value }).eq('id', id);
+    // DB Update (skip for temp local items)
+    if (field !== 'material_id' && field !== 'source' && field !== 'evidence_status' && !id.startsWith('temp-') && !id.startsWith('local-')) {
+        try {
+            await supabase.from('edge_material_streams').update({ [field]: value }).eq('id', id);
+        } catch (e) { console.error(e); }
     }
   };
 
@@ -1170,7 +1183,7 @@ const DigitalEDGE: React.FC = () => {
                           </h3>
                           <p className="text-slate-300 text-sm max-w-lg">
                              Upload an architectural floor plan or section. Our AI Consultant will analyze it to suggest 
-                             strategies for <strong>Water (>30%)</strong> and <strong>Energy (>30%)</strong> reduction, plus <strong>Zero Carbon</strong> material alternatives.
+                             strategies for <strong>Water (&gt;30%)</strong> and <strong>Energy (&gt;30%)</strong> reduction, plus <strong>Zero Carbon</strong> material alternatives.
                           </p>
                        </div>
                        <label className="flex flex-col items-center justify-center bg-white/10 hover:bg-white/20 transition-colors border border-white/20 rounded-lg p-3 cursor-pointer w-24 h-24">
@@ -1299,7 +1312,7 @@ const DigitalEDGE: React.FC = () => {
                     <div className="p-3 bg-red-50 border border-red-100 rounded-lg flex items-start">
                        <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 mr-2 shrink-0" />
                        <div className="text-xs text-red-800">
-                         <strong>Certification Risk:</strong><br/>Efficiency must be > {project.edge_target_level === 'Zero Carbon' ? 100 : project.edge_target_level === 'Advanced' ? 40 : 20}%. Current strategy fails.
+                         <strong>Certification Risk:</strong><br/>Efficiency must be &gt; {project.edge_target_level === 'Zero Carbon' ? 100 : project.edge_target_level === 'Advanced' ? 40 : 20}%. Current strategy fails.
                        </div>
                     </div>
                   )}

@@ -141,24 +141,30 @@ const LiveAssistant: React.FC<LiveAssistantProps> = ({ onClose }) => {
   }, []);
 
   return (
-    <div className="fixed bottom-24 right-6 w-80 bg-slate-900 text-white rounded-2xl shadow-2xl p-6 z-50 animate-bounce-in border border-slate-700">
-       <div className="flex justify-between items-center mb-6">
+    <div className="fixed bottom-24 right-6 w-96 bg-slate-900/95 backdrop-blur-xl text-white rounded-2xl shadow-2xl p-6 z-50 animate-bounce-in border border-[#0B8F6C]/30 flex flex-col">
+       <div className="flex justify-between items-center mb-6 border-b border-white/10 pb-4">
           <div className="flex items-center space-x-2">
-             <Activity className={`w-5 h-5 ${isActive ? 'text-green-400 animate-pulse' : 'text-slate-400'}`} />
-             <span className="font-semibold">Live Assistant</span>
+             <Activity className={`w-5 h-5 ${isActive ? 'text-[#0B8F6C] animate-pulse' : 'text-slate-400'}`} />
+             <span className="font-semibold text-emerald-300">Green Intelligence Copilot</span>
           </div>
-          <button onClick={onClose} className="p-1 hover:bg-slate-700 rounded-full">
+          <button onClick={onClose} className="p-1 hover:bg-white/10 rounded-full transition-colors">
             <X className="w-5 h-5" />
           </button>
        </div>
 
-       <div className="flex flex-col items-center justify-center py-8">
-          <div className={`w-20 h-20 rounded-full flex items-center justify-center mb-4 transition-all duration-500 ${isActive ? 'bg-green-500/20 shadow-[0_0_30px_rgba(34,197,94,0.3)]' : 'bg-slate-800'}`}>
-             <Mic className={`w-8 h-8 ${isActive ? 'text-green-400' : 'text-slate-500'}`} />
+       <div className="flex flex-col items-center justify-center py-6">
+          <div className={`w-24 h-24 rounded-full flex items-center justify-center mb-6 transition-all duration-500 relative ${isActive ? 'bg-[#0B8F6C]/20 shadow-[0_0_40px_rgba(11,143,108,0.4)]' : 'bg-slate-800'}`}>
+             {isActive && (
+               <>
+                 <div className="absolute inset-0 rounded-full border-2 border-[#0B8F6C]/50 animate-ping"></div>
+                 <div className="absolute inset-2 rounded-full border-2 border-[#0B8F6C]/30 animate-pulse delay-75"></div>
+               </>
+             )}
+             <Mic className={`w-10 h-10 z-10 ${isActive ? 'text-emerald-400' : 'text-slate-500'}`} />
           </div>
-          <p className="text-slate-300 font-medium">{status}</p>
-          <p className="text-xs text-slate-500 mt-2 text-center px-4">
-             Gemini 2.5 Native Audio Active. Speak naturally to ask about waste data.
+          <p className="text-emerald-50 text-lg font-medium">{status}</p>
+          <p className="text-xs text-slate-400 mt-3 text-center px-4 leading-relaxed">
+             Ask questions like "How do I reduce concrete waste here?" directly to the AI model. 
           </p>
        </div>
     </div>

@@ -67,7 +67,14 @@ const Intelligence: React.FC = () => {
   };
 
   return (
-    <div className="h-full flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
+    <div className="h-full flex flex-col space-y-4">
+      <div className="flex justify-between items-end">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-800 flex items-center"><Brain className="w-6 h-6 mr-2 text-emerald-600" /> AI Waste Analytics Engine</h2>
+          <p className="text-slate-500">Waste Prediction, Optimization & Circular Economy Engine powered by Gemini.</p>
+        </div>
+      </div>
+      <div className="flex-1 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
       {/* Tabs */}
       <div className="flex border-b border-slate-200">
         <button
@@ -101,7 +108,57 @@ const Intelligence: React.FC = () => {
       </div>
 
       {/* Content Area */}
-      <div className="flex-1 overflow-y-auto p-6 bg-slate-50">
+      <div className="flex-1 overflow-y-auto p-6 bg-slate-50 relative">
+        {(!result && !loading) && (
+          <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-slate-400 overflow-y-auto w-full">
+             <div className="w-16 h-16 bg-[#0B8F6C]/10 rounded-full flex items-center justify-center mb-4">
+                <Brain className="w-8 h-8 text-[#0B8F6C]" />
+             </div>
+             <p className="max-w-md text-center text-slate-800 text-lg font-medium">Hello, I'm your Green Copilot.</p>
+             <p className="max-w-md text-center text-sm mt-1">Select a core capability tab to begin.</p>
+             
+             {activeTab === 'chat' && (
+             <div className="w-full max-w-2xl bg-white rounded-xl p-6 border border-slate-200 mt-8 shadow-sm">
+                <div className="flex justify-between items-start mb-4">
+                   <h4 className="font-bold text-slate-800 text-sm tracking-wider uppercase flex items-center"><Activity className="w-5 h-5 mr-2 text-[#0B8F6C]" /> Predicted Waste Baseline</h4>
+                   <span className="text-[10px] bg-red-100 text-red-700 px-2 py-0.5 rounded font-bold">RISK: HIGH</span>
+                </div>
+                <div className="mb-2">
+                   <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Project Profile: </span>
+                   <span className="text-sm font-semibold text-slate-800">Office Complex Alpha (12,500 m²)</span>
+                </div>
+                <div className="grid grid-cols-4 gap-3 border-y border-slate-100 py-4 mb-4 font-data">
+                   <div className="text-center">
+                      <div className="text-[10px] text-slate-400 mb-1">TOTAL (EST.)</div>
+                      <div className="text-2xl font-bold text-slate-800">120t</div>
+                   </div>
+                   <div className="text-center border-l border-slate-100">
+                      <div className="text-[10px] text-slate-400 mb-1">CONCRETE</div>
+                      <div className="text-2xl font-bold text-slate-800">65t</div>
+                   </div>
+                   <div className="text-center border-l border-slate-100">
+                      <div className="text-[10px] text-slate-400 mb-1">STEEL</div>
+                      <div className="text-2xl font-bold text-slate-800">20t</div>
+                   </div>
+                   <div className="text-center border-l border-slate-100">
+                      <div className="text-[10px] text-slate-400 mb-1">TIMBER</div>
+                      <div className="text-2xl font-bold text-slate-800">15t</div>
+                   </div>
+                </div>
+                <div className="text-sm bg-emerald-50 text-[#0B8F6C] p-3 rounded-lg border border-emerald-100/50 flex">
+                  <Activity className="w-5 h-5 mr-2 shrink-0" />
+                  <span>Recommendation: Reduce concrete order target by 10%. Local steel recycler match available within 12km (Est. savings R45,000).</span>
+                </div>
+             </div>
+             )}
+
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-2 w-full max-w-2xl mt-8">
+                 <button onClick={() => setPrompt("How can I reduce waste on the Office Complex project?")} className="text-sm bg-white border border-slate-200 p-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:border-[#0B8F6C]/30 hover:text-[#0B8F6C] transition-all text-left font-medium shadow-sm">"How can I reduce waste on the Office Complex project?"</button>
+                 <button onClick={() => setPrompt("Scan BIM context for material optimization...")} className="text-sm bg-white border border-slate-200 p-3 rounded-xl text-slate-600 hover:bg-slate-50 hover:border-[#0B8F6C]/30 hover:text-[#0B8F6C] transition-all text-left font-medium shadow-sm">"Scan BIM context for material optimization..."</button>
+             </div>
+          </div>
+        )}
+
         {result && (
           <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100 mb-6 animate-fade-in">
              <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
@@ -182,6 +239,7 @@ const Intelligence: React.FC = () => {
           </button>
         </div>
       </div>
+    </div>
     </div>
   );
 };

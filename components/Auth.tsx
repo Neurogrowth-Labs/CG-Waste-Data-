@@ -2,10 +2,10 @@
 import React, { useState } from 'react';
 import { 
   ShieldCheck, Lock, Building2, FileCheck, Globe, 
-  ChevronRight, Check, AlertTriangle, Fingerprint, Smartphone, Mail, Loader2
+  ChevronRight, Check, AlertTriangle, Fingerprint, Smartphone, Mail, Loader2, Sparkles
 } from 'lucide-react';
 import { User } from '../types';
-import { supabase } from '../lib/supabaseClient';
+import { supabase, isOffline } from '../lib/supabaseClient';
 
 interface AuthProps {
   onLogin: (user: User) => void;
@@ -35,6 +35,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
   const [formData, setFormData] = useState({
     email: '',
     password: '',
+    signupPassword: '', // New field for signup
     fullName: '',
     orgName: '',
     role: 'manager',
@@ -43,11 +44,32 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     mfaMethod: 'app'
   });
 
+  const triggerDemoLogin = (name: string, email: string) => {
+    // Helper to simulate login delay then enter app
+    setLoading(true);
+    setTimeout(() => {
+        onLogin({
+           name: name || 'Demo User',
+           email: email || 'demo@cgwaste.com',
+           role: formData.role,
+           organization: formData.orgName || 'Demo Organization',
+           jurisdiction: formData.jurisdiction,
+           standards: formData.standards
+        });
+    }, 800);
+  };
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     
+    // 1. Explicit offline check or Magic Demo Credential
+    if (isOffline || formData.email.includes('demo')) {
+       triggerDemoLogin('Demo User', formData.email);
+       return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
@@ -59,7 +81,27 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       // onLogin will be handled by the session listener in App.tsx
     } catch (err: any) {
       console.error(err);
-      setError(err.message || 'Login failed');
+      
+      const msg = err.message || '';
+      
+      // 2. Catch Network/Fetch errors OR Invalid Credentials (allow fallback for demo purposes)
+      if (
+          msg === 'Failed to fetch' || 
+          msg.includes('NetworkError') || 
+          msg.includes('fetch') ||
+          msg.includes('connection')
+      ) {
+          console.warn("Backend unreachable. Falling back to Demo Mode.");
+          triggerDemoLogin('User (Offline)', formData.email);
+          return;
+      }
+      
+      // OPTIONAL: If invalid credentials, offer a hint or just show error
+      if (msg.includes('Invalid login credentials')) {
+          setError('Invalid credentials. Try "demo@cgwaste.com" for a tour.');
+      } else {
+          setError(msg || 'Login failed');
+      }
       setLoading(false);
     }
   };
@@ -95,6 +137,10 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         setError("Please enter your work email.");
         return;
       }
+      if (!formData.signupPassword || formData.signupPassword.length < 8) {
+        setError("Please enter a password of at least 8 characters.");
+        return;
+      }
       // Simple email format check
       if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
         setError("Please enter a valid email address.");
@@ -118,10 +164,16 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setLoading(true);
     setError(null);
 
+    // 1. Explicit offline check
+    if (isOffline) {
+       triggerDemoLogin(formData.fullName, formData.email);
+       return;
+    }
+
     try {
       const { data, error } = await supabase.auth.signUp({
         email: formData.email,
-        password: 'TemporaryPassword123!', // In a real app, ask for password in UI
+        password: formData.signupPassword,
         options: {
           data: {
             full_name: formData.fullName,
@@ -137,8 +189,22 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       
       // Auto-login happens on signup usually, App.tsx listener will catch it
     } catch (err: any) {
-      console.error(err);
-      setError(err.message || 'Signup failed');
+      console.error("Signup error:", err);
+      
+      // 2. Catch Network/Fetch errors (Implicit offline check)
+      const msg = err.message || '';
+      if (
+          msg === 'Failed to fetch' || 
+          msg.includes('NetworkError') || 
+          msg.includes('fetch') ||
+          msg.includes('connection')
+      ) {
+          console.warn("Backend unreachable. Falling back to Demo Mode.");
+          triggerDemoLogin(formData.fullName, formData.email);
+          return;
+      }
+
+      setError(msg || 'Signup failed');
       setLoading(false);
     }
   };
@@ -154,8 +220,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
   const handleShowLegal = (e: React.MouseEvent, type: 'terms' | 'privacy') => {
       e.preventDefault();
-      // Since Auth is outside main app context, we use a simple alert or modal approach here
-      // For this demo, a simple alert suffices to show interactivity, or we could add a state for a modal.
       alert(`${type === 'terms' ? 'Terms of Service' : 'Privacy Policy'} content would appear here in a production environment.`);
   };
 
@@ -240,6 +304,15 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               className="w-full bg-slate-900 text-white py-2 rounded-lg text-sm font-semibold hover:bg-slate-800 transition-colors flex items-center justify-center disabled:opacity-70 shadow-md"
             >
               {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : 'Secure Login'}
+            </button>
+
+            {/* DEMO BUTTON */}
+            <button 
+               type="button"
+               onClick={() => triggerDemoLogin('Demo User', 'demo@cgwaste.com')}
+               className="w-full py-2 bg-gradient-to-r from-emerald-50 to-teal-50 text-emerald-700 border border-emerald-200 rounded-lg text-sm font-semibold hover:bg-emerald-100 transition-colors flex items-center justify-center"
+            >
+               <Sparkles className="w-4 h-4 mr-2" /> Try Demo Mode
             </button>
             
             {/* Google Sign In Section */}
@@ -380,6 +453,16 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                        placeholder="john@construction-inc.com"
                        value={formData.email}
                        onChange={e => setFormData({...formData, email: e.target.value})}
+                     />
+                   </div>
+                   <div>
+                     <label className="block text-xs font-medium text-slate-700 mb-1">Create Password</label>
+                     <input 
+                       type="password" 
+                       className="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-green-500 outline-none text-sm" 
+                       placeholder="Min. 8 characters"
+                       value={formData.signupPassword}
+                       onChange={e => setFormData({...formData, signupPassword: e.target.value})}
                      />
                    </div>
                 </div>

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { View, User } from '../types';
-import { LayoutDashboard, Building2, Activity, Brain, Palette, Settings, Menu, X, LogOut, Leaf, ChevronRight } from 'lucide-react';
+import { LayoutDashboard, Building2, Activity, Brain, Palette, Settings, Menu, X, LogOut, Leaf, ChevronRight, Smartphone, Scale, Layers, Store, GraduationCap } from 'lucide-react';
 
 interface LayoutProps {
   currentView: View;
@@ -16,11 +16,15 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
 
   const navItems = [
     { id: View.DASHBOARD, label: 'Dashboard', icon: LayoutDashboard },
+    { id: View.FIELD_OPS, label: 'Field Operations', icon: Smartphone },
     { id: View.PROJECTS, label: 'Projects', icon: Building2 },
     { id: View.TRACKING, label: 'Waste Tracking', icon: Activity },
-    { id: View.EDGE, label: 'EDGE Consultant', icon: Leaf },
+    { id: View.TWIN, label: 'Digital Twin', icon: Layers },
     { id: View.INTELLIGENCE, label: 'Intelligence', icon: Brain },
-    { id: View.CREATIVE, label: 'Creative Studio', icon: Palette },
+    { id: View.EDGE, label: 'Design Consultant', icon: Leaf },
+    { id: View.COMPLIANCE, label: 'Compliance Engine', icon: Scale },
+    { id: View.MARKETPLACE, label: 'Marketplace', icon: Store },
+    { id: View.EDUCATION, label: 'Education Hub', icon: GraduationCap },
     { id: View.SETTINGS, label: 'Settings', icon: Settings },
   ];
 
@@ -73,8 +77,8 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
               }}
               className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
                 currentView === item.id
-                  ? 'bg-green-600 text-white shadow-lg'
-                  : 'text-slate-400 hover:bg-slate-800 hover:text-white'
+                  ? 'bg-[#0B8F6C] text-white shadow-lg'
+                  : 'text-slate-400 hover:bg-[#0B8F6C]/10 hover:text-white'
               }`}
             >
               <item.icon className="w-5 h-5" />

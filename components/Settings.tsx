@@ -1,14 +1,16 @@
 
 import React, { useState } from 'react';
 import { User } from '../types';
-import { Shield, Bell, User as UserIcon, Lock, FileText, ChevronRight, Save, LogOut } from 'lucide-react';
+import { Shield, Bell, User as UserIcon, Lock, FileText, ChevronRight, Save, LogOut, Loader2, Check } from 'lucide-react';
+import { supabase } from '../lib/supabaseClient';
 
 interface SettingsProps {
   user: User;
   onLogout: () => void;
+  onProfileUpdate: () => void;
 }
 
-const Settings: React.FC<SettingsProps> = ({ user, onLogout }) => {
+const Settings: React.FC<SettingsProps> = ({ user, onLogout, onProfileUpdate }) => {
   const [activeTab, setActiveTab] = useState<'profile' | 'notifications' | 'privacy' | 'terms'>('profile');
   const [formData, setFormData] = useState({
     name: user.name,
@@ -16,11 +18,42 @@ const Settings: React.FC<SettingsProps> = ({ user, onLogout }) => {
     role: user.role,
     organization: user.organization
   });
+  const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleSave = () => {
-    setSaved(true);
-    setTimeout(() => setSaved(false), 2000);
+  const handleSave = async () => {
+    setSaving(true);
+    setError(null);
+    setSaved(false);
+
+    try {
+      const { data: { user: authUser } } = await supabase.auth.getUser();
+      if (!authUser) throw new Error("No authenticated user found.");
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          full_name: formData.name,
+          organization: formData.organization,
+          // Role is typically immutable for end-users, but if we wanted to update: role: formData.role
+        })
+        .eq('id', authUser.id);
+
+      if (error) throw error;
+
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+      
+      // Trigger refresh in parent
+      onProfileUpdate();
+
+    } catch (e: any) {
+      console.error("Profile update error", e);
+      setError(e.message || "Failed to save profile.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   const renderContent = () => {
@@ -29,6 +62,11 @@ const Settings: React.FC<SettingsProps> = ({ user, onLogout }) => {
         return (
           <div className="space-y-6 animate-fade-in">
              <h3 className="text-lg font-bold text-slate-800">Profile Settings</h3>
+             {error && (
+                <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm border border-red-200">
+                  {error}
+                </div>
+             )}
              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                    <label className="block text-sm font-medium text-slate-700 mb-1">Full Name</label>
@@ -70,10 +108,11 @@ const Settings: React.FC<SettingsProps> = ({ user, onLogout }) => {
              <div className="pt-4 flex items-center space-x-4">
                <button 
                  onClick={handleSave}
-                 className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 flex items-center transition-colors"
+                 disabled={saving}
+                 className="px-6 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 flex items-center transition-colors disabled:opacity-70"
                >
-                 <Save className="w-4 h-4 mr-2" />
-                 {saved ? 'Saved!' : 'Save Changes'}
+                 {saving ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : saved ? <Check className="w-4 h-4 mr-2" /> : <Save className="w-4 h-4 mr-2" />}
+                 {saving ? 'Saving...' : saved ? 'Saved!' : 'Save Changes'}
                </button>
                <button onClick={onLogout} className="px-6 py-2 text-red-600 hover:bg-red-50 rounded-lg flex items-center transition-colors">
                  <LogOut className="w-4 h-4 mr-2" /> Sign Out
