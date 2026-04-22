@@ -46,7 +46,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
 
       {/* Sidebar */}
       <div className={`${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 fixed md:relative z-40 w-64 h-full bg-slate-900 text-white flex flex-col`}>
-        <div className="p-6 flex items-center justify-between">
+        <div className="p-6 flex items-center justify-between shrink-0">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-green-600 flex items-center justify-center shadow-lg shadow-emerald-900/20">
               {/* Geometric Cube/Hexagon Logo */}
@@ -67,7 +67,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
           </button>
         </div>
 
-        <nav className="flex-1 px-4 space-y-2 mt-4">
+        <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
           {navItems.map((item) => (
             <button
               key={item.id}
@@ -81,27 +81,27 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
                   : 'text-slate-400 hover:bg-[#0B8F6C]/10 hover:text-white'
               }`}
             >
-              <item.icon className="w-5 h-5" />
-              <span className="font-medium">{item.label}</span>
+              <item.icon className="w-5 h-5 shrink-0" />
+              <span className="font-medium whitespace-nowrap">{item.label}</span>
             </button>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-slate-800">
+        <div className="p-4 border-t border-slate-800 shrink-0">
           <div className="flex items-center space-x-3 px-4 py-3">
-            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold">
+            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-white font-bold shrink-0">
               {user.name.charAt(0)}
             </div>
             <div className="flex-1 overflow-hidden">
               <p className="text-sm font-medium truncate">{user.name}</p>
               <p className="text-xs text-slate-400 truncate capitalize">{user.role}</p>
             </div>
-            <button onClick={onLogout} title="Logout">
+            <button onClick={onLogout} title="Logout" className="shrink-0">
               <LogOut className="w-4 h-4 text-slate-400 cursor-pointer hover:text-white" />
             </button>
           </div>
           
-          {/* App Verification Links - Mandatory for Google Cloud compliance */}
+          {/* App Verification Links */}
           <div className="mt-4 px-4 flex flex-col space-y-2 text-[10px] text-slate-500 border-t border-slate-800 pt-4">
              <button onClick={handleLegalNavigation} className="hover:text-slate-300 flex items-center text-left w-full focus:outline-none"><ChevronRight className="w-3 h-3 mr-1"/> Privacy Policy</button>
              <button onClick={handleLegalNavigation} className="hover:text-slate-300 flex items-center text-left w-full focus:outline-none"><ChevronRight className="w-3 h-3 mr-1"/> Terms of Service</button>
@@ -111,12 +111,12 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
-        <header className="h-16 bg-white border-b border-slate-200 flex items-center justify-between px-6 md:px-8">
+        <header className="h-16 shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-6 md:px-8">
            <h1 className="text-xl font-semibold text-slate-800">
              {navItems.find(i => i.id === currentView)?.label}
            </h1>
            <div className="flex items-center space-x-4">
-             <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-500">v2.4.0 ({user.jurisdiction})</span>
+             <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-500 hidden sm:inline-block">v2.4.0 ({user.jurisdiction})</span>
            </div>
         </header>
         <main className="flex-1 overflow-y-auto p-6 md:p-8 bg-slate-50 relative">

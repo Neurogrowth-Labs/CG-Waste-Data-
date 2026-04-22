@@ -2,7 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Check, ChevronRight, Truck, Scale, MapPin, ClipboardCheck, ArrowRight, Wand2, Calculator, Save, Loader2, Calendar, History, Layers, Info, Sparkles, Printer } from 'lucide-react';
 import { predictProjectWaste } from '../services/geminiService';
-import { supabase } from '../lib/supabaseClient';
+import { auth, db } from '../lib/firebaseClient';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 // --- Shared Components ---
 
@@ -109,35 +110,31 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
     setIsSaving(true);
     try {
       // 1. Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("No user logged in");
 
       // 2. Insert Project
-      const { data: projectData, error: projectError } = await supabase
-        .from('projects')
-        .insert({
-          owner_id: user.id,
+      const projectRef = await addDoc(collection(db, 'projects'), {
+          owner_id: user.uid,
           name: formData.name,
-          project_type: formData.type.includes('Commercial') ? 'Commercial' : 'Residential', // Simplified mapping
+          project_type: formData.type.includes('Commercial') ? 'Commercial' : 'Residential',
           construction_phase: formData.phase.includes('Demolition') ? 'Demolition' : 'Construction',
           gross_floor_area: parseInt(formData.area),
           hazmat_status: formData.hazmat ? 'Potential' : 'Clear',
           status: 'Active',
           location: 'New Site (Pending)',
-          compliance_score: 95 // Start high
-        })
-        .select()
-        .single();
-
-      if (projectError) throw projectError;
+          compliance_score: 95,
+          createdAt: serverTimestamp()
+      });
 
       // 3. Log Action
-      await supabase.from('audit_logs').insert({
-        user_id: user.id,
-        project_id: projectData.id,
+      await addDoc(collection(db, 'audit_logs'), {
+        user_id: user.uid,
+        project_id: projectRef.id,
         action: 'Created New Project',
         status: 'Verified',
-        user_role: 'manager'
+        user_role: 'manager',
+        timestamp: serverTimestamp()
       });
       
     } catch (e) {
@@ -441,23 +438,22 @@ export const WasteTrackingWorkflow: React.FC = () => {
     setLoading(true);
     try {
       // 1. Get current user
-      const { data: { user } } = await supabase.auth.getUser();
+      const user = auth.currentUser;
       if (!user) throw new Error("Authentication required");
 
       const newManifestId = `MNF-${Math.floor(Math.random() * 90000) + 10000}`;
       
       // 2. Insert to DB (Real Data for Tracking)
-      const { error } = await supabase.from('waste_manifests').insert({
+      await addDoc(collection(db, 'waste_manifests'), {
          manifest_number: newManifestId,
          material: loadData.material,
          weight: parseFloat(loadData.weight),
          hauler: loadData.hauler,
          destination: loadData.destination,
          status: 'Pending', // Initial status
-         user_id: user.id
+         user_id: user.uid,
+         timestamp: serverTimestamp()
       });
-
-      if (error) throw error;
 
       setManifestId(newManifestId);
       setStep(3);

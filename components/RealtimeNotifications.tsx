@@ -1,6 +1,7 @@
 
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../lib/supabaseClient';
+import { db } from '../lib/firebaseClient';
+import { collection, query, onSnapshot, where } from 'firebase/firestore';
 import { AlertTriangle, CheckCircle, Info, Truck, X, AlertOctagon } from 'lucide-react';
 
 export interface Toast {
@@ -26,12 +27,11 @@ export const RealtimeNotifications: React.FC = () => {
 
   useEffect(() => {
     // Subscribe to Waste Manifest updates (Transport Status)
-    const manifestChannel = supabase.channel('manifest-updates')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'waste_manifests' },
-        (payload) => {
-          const newData = payload.new as any;
+    const manifestsQuery = query(collection(db, 'waste_manifests'));
+    const unsubscribeManifests = onSnapshot(manifestsQuery, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'modified') {
+          const newData = change.doc.data();
           if (newData.status === 'Verified') {
              addToast('Transport Verified', `Manifest ${newData.manifest_number} confirmed at destination.`, 'success');
           } else if (newData.status === 'Rejected') {
@@ -40,16 +40,15 @@ export const RealtimeNotifications: React.FC = () => {
              addToast('Logistics Update', `Vehicle for ${newData.manifest_number} is now in transit.`, 'info');
           }
         }
-      )
-      .subscribe();
+      });
+    });
 
     // Subscribe to Project updates (Compliance Alerts)
-    const projectChannel = supabase.channel('project-updates')
-      .on(
-        'postgres_changes',
-        { event: 'UPDATE', schema: 'public', table: 'projects' },
-        (payload) => {
-          const newData = payload.new as any;
+    const projectsQuery = query(collection(db, 'projects'));
+    const unsubscribeProjects = onSnapshot(projectsQuery, (snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'modified') {
+          const newData = change.doc.data();
           if (newData.hazmat_status === 'Detected') {
              addToast('Compliance Alert', `Critical: Hazardous materials detected at ${newData.name}.`, 'warning');
           }
@@ -57,12 +56,12 @@ export const RealtimeNotifications: React.FC = () => {
              addToast('Compliance Risk', `Compliance score for ${newData.name} has dropped critically to ${newData.compliance_score}%.`, 'error');
           }
         }
-      )
-      .subscribe();
+      });
+    });
 
     return () => {
-      supabase.removeChannel(manifestChannel);
-      supabase.removeChannel(projectChannel);
+      unsubscribeManifests();
+      unsubscribeProjects();
     };
   }, []);
 

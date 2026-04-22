@@ -261,6 +261,58 @@ export const generateCostBenefitAnalysis = async (projectDetails: any, streams: 
   return JSON.parse(response.text || "{}");
 };
 
+export const getMaterialRecommendations = async (context: any, materials: any[]) => {
+  const ai = getClient();
+  const prompt = `
+    Act as a strict **Sustainable Materials AI Consultant**.
+    Based on the project context and the available material database, provide the top 3 material recommendations.
+
+    **Project Context:**
+    - Type: ${context.projectType}
+    - Climate: ${context.climate}
+    - Budget: ${context.budget}
+    - Target: ${context.sustainabilityTarget}
+    - BIM Element: ${context.bimElement}
+
+    **Available Materials:**
+    ${JSON.stringify(materials.map(m => ({ 
+        id: m.Material_ID, 
+        name: m.Material_Name, 
+        class: m.Class,
+        carbon: m.Embodied_Carbon,
+        cost_index: m.Cost_Index
+    })))}
+
+    Return a JSON array of EXACTLY 3 recommended materials.
+    Format:
+    [
+      { "material": "Material Name", "score": number (0-100), "reasoning": "string", "tradeoffs": "string" }
+    ]
+  `;
+
+  const response = await ai.models.generateContent({
+    model: GeminiModel.FLASH_3,
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+          type: Type.OBJECT,
+          properties: {
+            material: { type: Type.STRING },
+            score: { type: Type.NUMBER },
+            reasoning: { type: Type.STRING },
+            tradeoffs: { type: Type.STRING }
+          }
+        }
+      }
+    }
+  });
+  
+  return JSON.parse(response.text || "[]");
+};
+
 export const predictProjectWaste = async (projectDetails: any) => {
   const ai = getClient();
   const prompt = `

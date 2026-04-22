@@ -17,48 +17,31 @@ import { ProjectSourceWorkflow, WasteTrackingWorkflow } from './components/Workf
 import { Auth } from './components/Auth';
 import { View, User } from './types';
 import { Mic, Plus, AlertTriangle, CheckCircle, AlertOctagon, Loader2, Truck, Clock, MapPin } from 'lucide-react';
-import { supabase } from './lib/supabaseClient';
+import { auth, db } from './lib/firebaseClient';
+import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { collection, query, orderBy, onSnapshot, getDoc, doc } from 'firebase/firestore';
 
 const ProjectsView = () => {
   const [showNewProject, setShowNewProject] = useState(false);
   const [projects, setProjects] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Initial Fetch
   useEffect(() => {
-    const fetchProjects = async () => {
-      try {
-        const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-        if (error) throw error;
-        if (data) setProjects(data);
-      } catch (e) {
-        console.error("Error fetching projects:", e);
-        // Fallback or empty state is handled by the UI below
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchProjects();
+    const q = query(collection(db, 'projects'), orderBy('created_at', 'desc'));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const projs: any[] = [];
+      snapshot.forEach((doc) => {
+        projs.push({ id: doc.id, ...doc.data() });
+      });
+      setProjects(projs);
+      setLoading(false);
+    }, (error) => {
+      console.error("Error fetching projects:", error);
+      setLoading(false);
+    });
 
-    // Realtime Subscription
-    const channel = supabase.channel('projects-view-realtime')
-      .on(
-        'postgres_changes',
-        { event: '*', schema: 'public', table: 'projects' },
-        (payload) => {
-           if (payload.eventType === 'INSERT') {
-             setProjects(prev => [payload.new, ...prev]);
-           } else if (payload.eventType === 'UPDATE') {
-             setProjects(prev => prev.map(p => p.id === payload.new.id ? payload.new : p));
-           } else if (payload.eventType === 'DELETE') {
-             setProjects(prev => prev.filter(p => p.id !== payload.old.id));
-           }
-        }
-      )
-      .subscribe();
-
-    return () => { supabase.removeChannel(channel); };
-  }, []); // Remove dependency on showNewProject as realtime handles inserts
+    return () => unsubscribe();
+  }, []);
 
   if (showNewProject) {
     return (
@@ -151,36 +134,20 @@ const TrackingView = () => {
    const [loading, setLoading] = useState(true);
 
    useEffect(() => {
-     // Fetch existing manifests
-     const fetchManifests = async () => {
-       try {
-         const { data, error } = await supabase.from('waste_manifests').select('*').order('created_at', { ascending: false });
-         if (error) throw error;
-         if (data) setManifests(data);
-       } catch (e) {
-         console.error("Error fetching manifests:", e);
-       } finally {
-         setLoading(false);
-       }
-     };
-     fetchManifests();
+     const q = query(collection(db, 'waste_manifests'), orderBy('created_at', 'desc'));
+     const unsubscribe = onSnapshot(q, (snapshot) => {
+       const mans: any[] = [];
+       snapshot.forEach((doc) => {
+         mans.push({ id: doc.id, ...doc.data() });
+       });
+       setManifests(mans);
+       setLoading(false);
+     }, (error) => {
+       console.error("Error fetching manifests:", error);
+       setLoading(false);
+     });
 
-     // Realtime Subscription for Status Updates
-     const channel = supabase.channel('manifests-view-realtime')
-       .on(
-         'postgres_changes',
-         { event: '*', schema: 'public', table: 'waste_manifests' },
-         (payload) => {
-            if (payload.eventType === 'INSERT') {
-              setManifests(prev => [payload.new, ...prev]);
-            } else if (payload.eventType === 'UPDATE') {
-              setManifests(prev => prev.map(m => m.id === payload.new.id ? payload.new : m));
-            }
-         }
-       )
-       .subscribe();
-
-      return () => { supabase.removeChannel(channel); };
+     return () => unsubscribe();
    }, []);
 
    return (
@@ -230,7 +197,7 @@ const TrackingView = () => {
                                   {m.manifest_number}
                                   <div className="text-[10px] text-slate-400 mt-0.5 flex items-center">
                                     <Clock className="w-3 h-3 mr-1" />
-                                    {new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}
+                                    {m.created_at && m.created_at.toDate ? new Date(m.created_at.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : new Date().toLocaleTimeString()}
                                   </div>
                                </td>
                                <td className="px-4 py-3">
@@ -272,51 +239,27 @@ const App: React.FC = () => {
   const [loadingSession, setLoadingSession] = useState(true);
 
   useEffect(() => {
-    // 1. Check for active session on load with robust error handling
-    const checkSession = async () => {
-      try {
-        const { data, error } = await supabase.auth.getSession();
-        if (error) throw error;
-        
-        if (data.session?.user) {
-          await fetchProfile(data.session.user.id, data.session.user.email!);
-        } else {
-          // No session found, stop loading to show Auth screen
-          setLoadingSession(false);
-        }
-      } catch (err) {
-        console.warn("Supabase session check failed - potential network or config issue:", err);
-        // Ensure we stop loading so the user isn't stuck on a white screen
-        setLoadingSession(false);
-      }
-    };
-
-    checkSession();
-
-    // 2. Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (event === 'SIGNED_IN' && session?.user) {
-        setLoadingSession(true);
-        await fetchProfile(session.user.id, session.user.email!);
-      } else if (event === 'SIGNED_OUT') {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setLoadingSession(true);
+      if (user && user.email) {
+        await fetchProfile(user.uid, user.email);
+      } else {
         setCurrentUser(null);
         setCurrentView(View.DASHBOARD);
+        setLoadingSession(false);
       }
     });
 
-    return () => subscription.unsubscribe();
+    return () => unsubscribe();
   }, []);
 
   const fetchProfile = async (userId: string, email: string) => {
     try {
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('*')
-        .eq('id', userId)
-        .single();
+      const docRef = doc(db, 'profiles', userId);
+      const docSnap = await getDoc(docRef);
       
-      // Even if profile fetch fails, we can populate basic user info from auth or defaults
-      if (data) {
+      if (docSnap.exists()) {
+        const data = docSnap.data();
         setCurrentUser({
           name: data.full_name || 'User',
           email: email,
@@ -326,7 +269,6 @@ const App: React.FC = () => {
           standards: data.standards || []
         });
       } else {
-         // Fallback if profile doesn't exist yet
          setCurrentUser({
           name: 'New User',
           email: email,
@@ -338,7 +280,6 @@ const App: React.FC = () => {
       }
     } catch (e) {
       console.error("Profile fetch error", e);
-      // Fallback to allow app usage
       setCurrentUser({
           name: 'User (Offline)',
           email: email,
@@ -355,19 +296,19 @@ const App: React.FC = () => {
   const refreshProfile = async () => {
     if (!currentUser) return;
     setLoadingSession(true);
-    const { data: { user } } = await supabase.auth.getUser();
+    const user = auth.currentUser;
     if (user && user.email) {
-      await fetchProfile(user.id, user.email);
+      await fetchProfile(user.uid, user.email);
     }
     setLoadingSession(false);
   };
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      await signOut(auth);
     } catch (e) {
       console.error("Sign out error", e);
-      setCurrentUser(null); // Force local logout
+      setCurrentUser(null);
     }
   };
 

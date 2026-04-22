@@ -6,11 +6,13 @@ import {
   TrafficCone, TrendingUp, DollarSign, UploadCloud, ChevronRight, 
   BarChart3, Box, Layers, HelpCircle, ShieldCheck, FileCheck, Search,
   ScanLine, ImageIcon, Plus, Trash2, Wand2, Calculator, MessageSquare, ListChecks, Info,
-  Maximize2, Wallet, ArrowUpRight, ArrowDownRight, Gavel, AlertTriangle
+  Maximize2, Wallet, ArrowUpRight, ArrowDownRight, Gavel, AlertTriangle, Blocks
 } from 'lucide-react';
 import { getEdgeAdvisory, analyzeConstructionPlan, predictEdgeBaselines, generateCostBenefitAnalysis, checkRegulatoryCompliance } from '../services/geminiService';
 import { EdgeProject, EdgeMaterialStream, BimMaterial } from '../types';
-import { supabase } from '../lib/supabaseClient';
+import { auth, db } from '../lib/firebaseClient';
+import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { MaterialDatabase } from './MaterialDatabase';
 
 // --- Sub-components ---
 
@@ -192,7 +194,7 @@ const AUDITOR_QA = [
 
 const DigitalEDGE: React.FC = () => {
   const [viewState, setViewState] = useState<'onboarding' | 'analysis'>('onboarding');
-  const [activeTab, setActiveTab] = useState<'calculator' | 'optimization' | 'compliance' | 'bim' | 'auditor' | 'plan' | 'trail'>('calculator');
+  const [activeTab, setActiveTab] = useState<'calculator' | 'optimization' | 'compliance' | 'bim' | 'auditor' | 'plan' | 'trail' | 'materials'>('calculator');
   
   const [project, setProject] = useState<EdgeProject>({
     project_id: 'new',
@@ -242,8 +244,7 @@ const DigitalEDGE: React.FC = () => {
     setIsForecasting(true);
 
     try {
-        const { data } = await supabase.auth.getUser();
-        const user = data.user;
+        const user = auth.currentUser;
         
         // 1. Forecast Data
         const forecast = await predictEdgeBaselines(project);
@@ -272,53 +273,37 @@ const DigitalEDGE: React.FC = () => {
 
         // 2. Save Project to DB
         if (user) {
-            const { data: projData, error: projError } = await supabase
-              .from('projects')
-              .insert({
-                owner_id: user.id,
+            const projectRef = await addDoc(collection(db, 'projects'), {
+                owner_id: user.uid,
                 name: project.project_name,
                 project_type: project.project_type,
                 location: project.location,
                 gross_floor_area: project.gross_floor_area,
                 construction_phase: project.construction_phase,
                 status: 'Active'
-              })
-              .select()
-              .single();
+              });
 
-            if (projError) throw projError;
             
             // Update local state with real ID
-            setProject(prev => ({ ...prev, project_id: projData.id }));
+            setProject(prev => ({ ...prev, project_id: projectRef.id }));
 
             // 3. Save Streams to DB
-            const streamsWithId = finalStreams.map(s => ({
-              ...s,
-              project_id: projData.id,
-              evidence_status: 'Pending'
+            const mappedStreams = await Promise.all(finalStreams.map(async (s) => {
+              const streamData = {
+                ...s,
+                project_id: projectRef.id,
+                evidence_status: 'Pending'
+              };
+              const streamRef = await addDoc(collection(db, 'edge_material_streams'), streamData);
+              return {
+                 ...streamData,
+                 material_id: streamRef.id
+              };
             }));
-
-            const { data: streamData, error: streamError } = await supabase
-              .from('edge_material_streams')
-              .insert(streamsWithId)
-              .select();
-            
-            if (streamError) throw streamError;
 
             // Map DB result to frontend types
-            const mappedStreams: EdgeMaterialStream[] = (streamData || []).map((s: any) => ({
-               material_id: s.id,
-               material_type: s.material_type,
-               category: s.category,
-               baseline_quantity_tons: s.baseline_quantity_tons,
-               improved_quantity_tons: s.improved_quantity_tons,
-               disposal_method: s.disposal_method,
-               recovery_percentage: s.recovery_percentage,
-               evidence_status: s.evidence_status,
-               source: s.source
-            }));
             
-            setStreams(mappedStreams);
+            setStreams(mappedStreams as EdgeMaterialStream[]);
             setViewState('analysis');
         } else {
             // Local state fallback if no user
@@ -356,11 +341,9 @@ const DigitalEDGE: React.FC = () => {
 
     if (project.project_id !== 'new') {
         try {
-            const { data, error } = await supabase.from('edge_material_streams').insert(newStream).select().single();
-            if (data) {
-                // Replace temp ID with real ID
-                setStreams(prev => prev.map(item => item.material_id === tempId ? { ...item, material_id: data.id } : item));
-            }
+            const docRef = await addDoc(collection(db, 'edge_material_streams'), newStream);
+            // Replace temp ID with real ID
+            setStreams(prev => prev.map(item => item.material_id === tempId ? { ...item, material_id: docRef.id } : item));
         } catch (e) {
             console.error("Failed to persist stream", e);
         }
@@ -370,7 +353,7 @@ const DigitalEDGE: React.FC = () => {
   const removeStream = async (id: string) => {
     setStreams(prev => prev.filter(s => s.material_id !== id));
     if (!id.startsWith('temp-') && !id.startsWith('local-')) {
-       await supabase.from('edge_material_streams').delete().eq('id', id);
+       await deleteDoc(doc(db, 'edge_material_streams', id));
     }
   };
 
@@ -472,21 +455,17 @@ const DigitalEDGE: React.FC = () => {
       // PERSIST TO SUPABASE
       if (project.project_id !== 'new') {
          try {
-             const { error: updateError } = await supabase
-                .from('projects')
-                .update({ compliance_score: result.compliance_score })
-                .eq('id', project.project_id);
-             
-             if (updateError) console.warn("Score sync failed:", updateError);
+             await updateDoc(doc(db, 'projects', project.project_id), { compliance_score: result.compliance_score });
 
-             const { data } = await supabase.auth.getUser();
-             if (data?.user) {
-                await supabase.from('audit_logs').insert({
-                   user_id: data.user.id,
+             const user = auth.currentUser;
+             if (user) {
+                await addDoc(collection(db, 'audit_logs'), {
+                   user_id: user.uid,
                    project_id: project.project_id,
                    action: `Compliance Audit (${jurisdiction}): ${result.risk_level} Risk`,
                    status: result.compliance_score > 80 ? 'Verified' : 'Flagged',
-                   user_role: 'Auditor'
+                   user_role: 'Auditor',
+                   timestamp: new Date()
                 });
              }
          } catch(e) {
@@ -530,7 +509,7 @@ const DigitalEDGE: React.FC = () => {
     // DB Update (skip for temp local items)
     if (field !== 'material_id' && field !== 'source' && field !== 'evidence_status' && !id.startsWith('temp-') && !id.startsWith('local-')) {
         try {
-            await supabase.from('edge_material_streams').update({ [field]: value }).eq('id', id);
+            await updateDoc(doc(db, 'edge_material_streams', id), { [field]: value });
         } catch (e) { console.error(e); }
     }
   };
@@ -654,6 +633,9 @@ const DigitalEDGE: React.FC = () => {
         <button onClick={() => setActiveTab('calculator')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center whitespace-nowrap ${activeTab === 'calculator' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
           <Zap className="w-4 h-4 mr-2" /> Efficiency Engine
         </button>
+        <button onClick={() => setActiveTab('materials')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center whitespace-nowrap ${activeTab === 'materials' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
+          <Blocks className="w-4 h-4 mr-2" /> Sustainable Materials
+        </button>
         <button onClick={() => setActiveTab('optimization')} className={`px-4 py-2 rounded-md text-sm font-medium transition-all flex items-center whitespace-nowrap ${activeTab === 'optimization' ? 'bg-white shadow text-slate-900' : 'text-slate-500 hover:text-slate-700'}`}>
           <Wallet className="w-4 h-4 mr-2" /> Cost & Revenue
         </button>
@@ -679,6 +661,13 @@ const DigitalEDGE: React.FC = () => {
          {/* LEFT PANEL: VARIES BY TAB */}
          <div className="lg:col-span-2 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
             
+            {/* TAB: SUSTAINABLE MATERIALS / MATERIAL DATABASE (NEW) */}
+            {activeTab === 'materials' && (
+               <div className="flex-1 flex flex-col p-6 bg-slate-50 overflow-y-auto">
+                    <MaterialDatabase />
+               </div>
+            )}
+
             {/* TAB: CALCULATOR (REFACTORED) */}
             {activeTab === 'calculator' && (
               <>

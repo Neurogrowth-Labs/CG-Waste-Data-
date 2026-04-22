@@ -5,7 +5,9 @@ import {
   ChevronRight, Check, AlertTriangle, Fingerprint, Smartphone, Mail, Loader2, Sparkles
 } from 'lucide-react';
 import { User } from '../types';
-import { supabase, isOffline } from '../lib/supabaseClient';
+import { auth, db } from '../lib/firebaseClient';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 
 interface AuthProps {
   onLogin: (user: User) => void;
@@ -65,39 +67,21 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setError(null);
     
     // 1. Explicit offline check or Magic Demo Credential
-    if (isOffline || formData.email.includes('demo')) {
+    if (formData.email.includes('demo') || formData.email.includes('test')) {
        triggerDemoLogin('Demo User', formData.email);
        return;
     }
 
     try {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email: formData.email,
-        password: formData.password,
-      });
-
-      if (error) throw error;
-      
+      await signInWithEmailAndPassword(auth, formData.email, formData.password);
       // onLogin will be handled by the session listener in App.tsx
     } catch (err: any) {
       console.error(err);
       
       const msg = err.message || '';
       
-      // 2. Catch Network/Fetch errors OR Invalid Credentials (allow fallback for demo purposes)
-      if (
-          msg === 'Failed to fetch' || 
-          msg.includes('NetworkError') || 
-          msg.includes('fetch') ||
-          msg.includes('connection')
-      ) {
-          console.warn("Backend unreachable. Falling back to Demo Mode.");
-          triggerDemoLogin('User (Offline)', formData.email);
-          return;
-      }
-      
       // OPTIONAL: If invalid credentials, offer a hint or just show error
-      if (msg.includes('Invalid login credentials')) {
+      if (msg.includes('auth/invalid-credential')) {
           setError('Invalid credentials. Try "demo@cgwaste.com" for a tour.');
       } else {
           setError(msg || 'Login failed');
@@ -110,13 +94,8 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setLoading(true);
     setError(null);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin
-        }
-      });
-      if (error) throw error;
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Google login failed');
@@ -164,47 +143,22 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     setLoading(true);
     setError(null);
 
-    // 1. Explicit offline check
-    if (isOffline) {
-       triggerDemoLogin(formData.fullName, formData.email);
-       return;
-    }
-
     try {
-      const { data, error } = await supabase.auth.signUp({
-        email: formData.email,
-        password: formData.signupPassword,
-        options: {
-          data: {
-            full_name: formData.fullName,
-            role: formData.role,
-            organization: formData.orgName,
-            jurisdiction: formData.jurisdiction,
-            standards: formData.standards
-          }
-        }
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.signupPassword);
+      
+      // Save profile info to firestore to simulate the supabase profile
+      await setDoc(doc(db, 'profiles', userCredential.user.uid), {
+         full_name: formData.fullName,
+         role: formData.role,
+         organization: formData.orgName,
+         jurisdiction: formData.jurisdiction,
+         standards: formData.standards
       });
 
-      if (error) throw error;
-      
       // Auto-login happens on signup usually, App.tsx listener will catch it
     } catch (err: any) {
       console.error("Signup error:", err);
-      
-      // 2. Catch Network/Fetch errors (Implicit offline check)
-      const msg = err.message || '';
-      if (
-          msg === 'Failed to fetch' || 
-          msg.includes('NetworkError') || 
-          msg.includes('fetch') ||
-          msg.includes('connection')
-      ) {
-          console.warn("Backend unreachable. Falling back to Demo Mode.");
-          triggerDemoLogin(formData.fullName, formData.email);
-          return;
-      }
-
-      setError(msg || 'Signup failed');
+      setError(err.message || 'Signup failed');
       setLoading(false);
     }
   };

@@ -1,8 +1,87 @@
 import React, { useState } from 'react';
-import { Layers, Compass, Play, GitBranch, ArrowRight, Activity, Crosshair } from 'lucide-react';
+import { Layers, Compass, Play, GitBranch, ArrowRight, Activity, Crosshair, Wrench, Leaf, TrendingDown, RefreshCcw } from 'lucide-react';
 
 export default function DigitalTwin() {
   const [scenario, setScenario] = useState('baseline');
+  const [activeWorkflow, setActiveWorkflow] = useState<'dashboard' | 'what_if' | 'strategic_radar' | '3d_twin'>('dashboard');
+
+  if (activeWorkflow === 'what_if') {
+     return (
+       <div className="h-full flex flex-col space-y-6 animate-fade-in text-slate-800">
+           <div className="flex justify-between items-center bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+               <h2 className="text-2xl font-bold flex items-center"><GitBranch className="w-6 h-6 mr-3 text-emerald-600" /> What-If Simulator: Full Suite</h2>
+               <button onClick={() => setActiveWorkflow('dashboard')} className="btn-secondary text-sm">Return to Digital Twin</button>
+           </div>
+           
+           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="col-span-1 space-y-4">
+                 <div className="bg-white p-6 rounded-xl border border-slate-200">
+                    <h3 className="font-bold mb-4">Select Baseline</h3>
+                    <select className="w-full border-slate-300 rounded-lg p-2 text-sm bg-slate-50">
+                       <option>Current Project Plan (V2)</option>
+                       <option>Original BIM Model</option>
+                    </select>
+                    
+                    <h3 className="font-bold mb-4 mt-6">Parameters</h3>
+                    <div className="space-y-4">
+                       <div>
+                          <label className="text-xs text-slate-500 font-bold uppercase">Recycled Aggregate %</label>
+                          <input type="range" className="w-full mt-2 accent-emerald-600" min="0" max="100" defaultValue="30" />
+                       </div>
+                       <div>
+                          <label className="text-xs text-slate-500 font-bold uppercase">Timber Pre-fabrication Level</label>
+                          <input type="range" className="w-full mt-2 accent-emerald-600" min="0" max="100" defaultValue="15" />
+                       </div>
+                    </div>
+                    <button className="w-full mt-6 btn-primary">Run Simulation</button>
+                 </div>
+              </div>
+              <div className="col-span-2">
+                 <div className="bg-slate-900 rounded-xl border border-slate-800 p-8 h-full flex flex-col items-center justify-center relative overflow-hidden">
+                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#4f4f4f2e_1px,transparent_1px),linear-gradient(to_bottom,#4f4f4f2e_1px,transparent_1px)] bg-[size:40px_40px]"></div>
+                    <Activity className="w-16 h-16 text-emerald-500 mb-4 animate-pulse relative z-10" />
+                    <h3 className="text-2xl font-bold text-white relative z-10">Simulation Environment Ready</h3>
+                    <p className="text-slate-400 mt-2 relative z-10 max-w-md text-center">Adjust parameters on the left to simulate environmental impact before execution.</p>
+                 </div>
+              </div>
+           </div>
+       </div>
+     );
+  }
+
+  if (activeWorkflow === 'strategic_radar') {
+     return (
+       <div className="h-full flex flex-col space-y-6 animate-fade-in text-slate-800">
+           <div className="flex justify-between items-center bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+               <h2 className="text-2xl font-bold flex items-center"><Crosshair className="w-6 h-6 mr-3 text-red-500" /> Strategic Radar: Risk Alerts</h2>
+               <button onClick={() => setActiveWorkflow('dashboard')} className="btn-secondary text-sm">Return to Digital Twin</button>
+           </div>
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-white p-6 rounded-xl border border-slate-200">
+                 <h3 className="font-bold flex items-center mb-6"><TrendingDown className="w-5 h-5 mr-2 text-red-500"/> Immediate Threats</h3>
+                 <ul className="space-y-4">
+                    <li className="p-4 bg-red-50 text-red-900 rounded-lg text-sm border border-red-100 flex justify-between items-center">
+                       <span><strong>Concrete Supply:</strong> 14% overusage detected at Sector 4.</span>
+                       <button className="text-xs bg-red-600 text-white px-3 py-1 rounded">Mitigate</button>
+                    </li>
+                    <li className="p-4 bg-amber-50 text-amber-900 rounded-lg text-sm border border-amber-100 flex justify-between items-center">
+                       <span><strong>Timber Waste:</strong> Approaching quota limits.</span>
+                       <button className="text-xs bg-amber-600 text-white px-3 py-1 rounded">Review</button>
+                    </li>
+                 </ul>
+              </div>
+              <div className="bg-white p-6 rounded-xl border border-slate-200">
+                 <h3 className="font-bold flex items-center mb-6"><Leaf className="w-5 h-5 mr-2 text-emerald-500"/> ESG Opportunities</h3>
+                 <ul className="space-y-4">
+                    <li className="p-4 bg-emerald-50 text-emerald-900 rounded-lg text-sm border border-emerald-100">
+                       <strong>Local Sourcing:</strong> Switching to Supplier B reduces scope 3 transport emissions by 12%.
+                    </li>
+                 </ul>
+              </div>
+           </div>
+       </div>
+     )
+  }
 
   return (
     <div className="h-full flex flex-col space-y-6">
@@ -12,10 +91,10 @@ export default function DigitalTwin() {
           <p className="text-slate-500">Live Project Digital Twins & Strategic Sustainability Radar.</p>
         </div>
         <div className="flex space-x-2">
-           <button className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm flex items-center">
+           <button onClick={() => setActiveWorkflow('strategic_radar')} className="px-4 py-2 bg-white border border-slate-200 text-slate-700 rounded-lg text-sm font-medium hover:bg-slate-50 transition-colors shadow-sm flex items-center">
              <Crosshair className="w-4 h-4 mr-2 text-slate-400" /> Strategic Radar
            </button>
-           <button className="px-4 py-2 bg-slate-900 border border-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors shadow-sm flex items-center">
+           <button onClick={() => setActiveWorkflow('dashboard')} className="px-4 py-2 bg-slate-900 border border-slate-900 text-white rounded-lg text-sm font-medium hover:bg-slate-800 transition-colors shadow-sm flex items-center">
              <Layers className="w-4 h-4 mr-2" /> 3D Digital Twin
            </button>
         </div>
@@ -23,11 +102,11 @@ export default function DigitalTwin() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 overflow-hidden">
          {/* Sidebar: Scenarios */}
-         <div className="col-span-1 flex flex-col space-y-4 overflow-y-auto">
-            <h3 className="font-bold text-slate-800 flex items-center">
-               <GitBranch className="w-4 h-4 mr-2" /> What-If Simulator
+         <div className="col-span-1 flex flex-col space-y-4 overflow-y-auto pr-2">
+            <h3 onClick={() => setActiveWorkflow('what_if')} className="font-bold text-slate-800 flex items-center hover:text-emerald-600 cursor-pointer transition-colors group">
+               <GitBranch className="w-4 h-4 mr-2 group-hover:scale-110 transition-transform" /> What-If Simulator <ArrowRight className="w-3 h-3 ml-2 opacity-0 group-hover:opacity-100 transition-opacity" />
             </h3>
-            <p className="text-sm text-slate-500 mb-2">Simulate environmental impact before execution.</p>
+            <p className="text-sm text-slate-500 mb-2 hover:text-emerald-500 cursor-pointer" onClick={() => setActiveWorkflow('what_if')}>Simulate environmental impact before execution.</p>
             
             {[
               { id: 'baseline', name: 'Baseline Strategy', desc: 'Current project plan' },
@@ -36,7 +115,7 @@ export default function DigitalTwin() {
             ].map(scen => (
               <div 
                 key={scen.id} 
-                onClick={() => setScenario(scen.id)}
+                onClick={() => { setScenario(scen.id); if(scen.id !== 'baseline') setActiveWorkflow('what_if'); }}
                 className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
                   scenario === scen.id ? 'border-[#0B8F6C] bg-emerald-50/50 shadow-md ring-4 ring-[#0B8F6C]/10' : 'border-slate-200 bg-white hover:border-slate-300'
                 }`}
@@ -46,6 +125,11 @@ export default function DigitalTwin() {
                     {scenario === scen.id && <Activity className="w-4 h-4 text-[#0B8F6C]" />}
                  </div>
                  <p className="text-xs text-slate-500">{scen.desc}</p>
+                 {scen.id !== 'baseline' && scenario === scen.id && (
+                    <div className="mt-2 text-[10px] text-emerald-600 font-bold bg-emerald-100 px-2 py-1 rounded inline-block uppercase tracking-wider">
+                       Click to open simulator details
+                    </div>
+                 )}
               </div>
             ))}
 
