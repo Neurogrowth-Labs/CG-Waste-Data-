@@ -467,6 +467,57 @@ export const analyzeImage = async (prompt: string, base64Image: string, mimeType
   return response.text;
 };
 
+export const analyzeSiteWasteStructured = async (base64Image: string, mimeType: string) => {
+  const ai = getClient();
+  const prompt = `
+    Analyze this construction site image.
+    Identify the specific types of construction waste, their rough estimated percentage of total visible waste, and any hazardous materials or risks present.
+    Provide a structured output.
+  `;
+  const response = await ai.models.generateContent({
+    model: GeminiModel.FLASH_3,
+    contents: {
+      parts: [
+        { inlineData: { data: base64Image, mimeType } },
+        { text: prompt }
+      ]
+    },
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+         type: Type.OBJECT,
+         properties: {
+            overview_assessment: { type: Type.STRING, description: "A two-sentence executive summary of the site's waste state." },
+            risk_level: { type: Type.STRING, description: "Low, Medium, or High depending on safety/hazards." },
+            waste_streams: {
+               type: Type.ARRAY,
+               items: {
+                  type: Type.OBJECT,
+                  properties: {
+                     material: { type: Type.STRING },
+                     estimated_percentage: { type: Type.NUMBER },
+                     description: { type: Type.STRING }
+                  }
+               }
+            },
+            hazards_detected: {
+               type: Type.ARRAY,
+               items: {
+                  type: Type.OBJECT,
+                  properties: {
+                     hazard_name: { type: Type.STRING },
+                     severity: { type: Type.STRING },
+                     action_required: { type: Type.STRING }
+                  }
+               }
+            }
+         }
+      }
+    }
+  });
+  return JSON.parse(response.text || "{}");
+};
+
 export const editImage = async (prompt: string, base64Image: string, mimeType: string) => {
   const ai = getClient();
   const response = await ai.models.generateContent({

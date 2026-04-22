@@ -1,8 +1,16 @@
 import React, { useState } from 'react';
-import { Scale, FileCheck, CheckCircle2, AlertCircle, FileText, Download, ChevronRight, Activity } from 'lucide-react';
+import { Scale, FileCheck, CheckCircle2, AlertCircle, FileText, Download, ChevronRight, Activity, Lock } from 'lucide-react';
+import { User } from '../types';
 
-export default function ComplianceEngine() {
+interface ComplianceEngineProps {
+  user?: User;
+}
+
+export default function ComplianceEngine({ user }: ComplianceEngineProps) {
   const [activeTab, setActiveTab] = useState<'status' | 'reports'>('status');
+
+  // RBAC checks for NEMA reporting features
+  const isAuthorizedManager = user?.role === 'admin' || user?.role === 'manager';
 
   return (
     <div className="h-full flex flex-col space-y-6">
@@ -99,8 +107,26 @@ export default function ComplianceEngine() {
             </div>
           </div>
         ) : (
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <div className="space-y-4">
+           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative">
+              {!isAuthorizedManager ? (
+                 <div className="absolute inset-0 z-10 bg-slate-50/80 backdrop-blur-sm rounded-xl flex items-center justify-center border border-slate-200">
+                    <div className="text-center max-w-md bg-white p-8 rounded-xl shadow-lg border border-slate-200">
+                       <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex flex-col items-center justify-center mx-auto mb-4">
+                         <Lock className="w-8 h-8" />
+                       </div>
+                       <h3 className="text-xl font-bold text-slate-800 mb-2">Access Restricted</h3>
+                       <p className="text-sm text-slate-600">
+                          Your current role ({user?.role || 'user'}) does not have permissions to execute automated NEMA reporting APIs. 
+                          Please contact a Platform Administrator or Environmental Director to approve submissions.
+                       </p>
+                       <button className="mt-6 w-full py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800">
+                         Request Access Elevation
+                       </button>
+                    </div>
+                 </div>
+              ) : null}
+              
+              <div className={`space-y-4 ${!isAuthorizedManager ? 'opacity-50 pointer-events-none' : ''}`}>
                 <h3 className="font-bold text-slate-800 border-b border-slate-200 pb-2">Generate Reports</h3>
                 {[
                   { name: 'ESG Quarterly Disclosures', desc: 'Full emissions & waste diversion rates.' },
@@ -118,14 +144,14 @@ export default function ComplianceEngine() {
                   </div>
                 ))}
               </div>
-              <div className="bg-slate-900 rounded-xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-center border border-slate-800">
+              <div className={`bg-slate-900 rounded-xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-center border border-slate-800 ${!isAuthorizedManager ? 'opacity-50 pointer-events-none' : ''}`}>
                  <div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl"></div>
                  <Activity className="w-8 h-8 text-emerald-400 mb-4" />
                  <h3 className="text-xl font-bold mb-2">Live API Integration Active</h3>
                  <p className="text-slate-400 text-sm mb-6">Your NEMA compliance data is currently syncing directly to local regulatory endpoints securely.</p>
                  <div className="bg-black/40 rounded-lg p-4 font-mono text-xs text-emerald-400">
                     <div>&gt; POST /api/v1/compliance/nema-sync</div>
-                    <div>&gt; Payload verified</div>
+                    <div>&gt; Payload verified (Auth context: {user?.role})</div>
                     <div>&gt; Checksum: 0x8F9B2A...</div>
                     <div className="text-slate-500 mt-2">// Next automated sync in 12hrs</div>
                  </div>

@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Search, MapPin, Camera, Brain, MessageSquare, Mic, Loader2, Play } from 'lucide-react';
-import { searchGrounding, mapsGrounding, analyzeImage, generateThinking, generateText } from '../services/geminiService';
+import { Search, MapPin, Camera, Brain, MessageSquare, Mic, Loader2, Play, Activity, AlertTriangle } from 'lucide-react';
+import { searchGrounding, mapsGrounding, analyzeImage, generateThinking, generateText, analyzeSiteWasteStructured } from '../services/geminiService';
 import ReactMarkdown from 'react-markdown'; // Assuming we can use this or just render plain text
 // Note: Since I cannot install react-markdown, I will render basic text with line breaks.
 
@@ -42,13 +42,8 @@ const Intelligence: React.FC = () => {
         const base64Data = imagePreview.split(',')[1];
         const mimeType = imageFile?.type || 'image/jpeg';
         
-        // Enforce HazMat identification in the prompt with context fallback
-        const visionPrompt = prompt 
-          ? `${prompt}\n\nIMPORTANT: You must specifically check for and list any potential hazardous materials (HazMat) visible in the image, such as asbestos, lead paint, or chemical containers. If none are clearly visible, you must note potential risks based on the site's context. Format this as a distinct 'Hazardous Materials Assessment' section.`
-          : "Analyze this construction site image for waste management purposes.\n\n1. **Waste Identification**: List visible waste streams.\n2. **Hazardous Materials Assessment**: CRITICAL. Explicitly identify and list any potential hazardous materials (HazMat) visible, such as asbestos, lead paint, or chemical containers. If none are clearly visible, note potential risks based on the site's context (e.g. 'Demolition of pre-1990 structure suggests asbestos risk').\n3. **Recommendations**: Tailored safety or disposal advice.";
-
-        const res = await analyzeImage(visionPrompt, base64Data, mimeType);
-        setResult({ text: res });
+        const res = await analyzeSiteWasteStructured(base64Data, mimeType);
+        setResult({ structuredVision: res });
       } else if (activeTab === 'chat') {
         // Use Thinking model for complex strategy if 'strategy' or 'plan' is in prompt, else regular text
         if (prompt.toLowerCase().includes('plan') || prompt.toLowerCase().includes('strategy') || prompt.toLowerCase().includes('report')) {
@@ -160,13 +155,81 @@ const Intelligence: React.FC = () => {
         )}
 
         {result && (
-          <div className="bg-white p-6 rounded-lg shadow-sm border border-slate-100 mb-6 animate-fade-in">
-             <h3 className="text-sm font-semibold text-slate-400 uppercase tracking-wider mb-2">
-               {activeTab === 'chat' && result.isThinking ? 'Deep Reasoning Result' : 'Analysis Result'}
+          <div className="card-premium p-6 mb-6 animate-fade-in border-t-4 border-t-[#0B8F6C]">
+             <h3 className="text-sm font-bold text-slate-800 uppercase tracking-wider mb-4 flex items-center">
+               <Activity className="w-4 h-4 mr-2 text-[#0B8F6C]" />
+               {activeTab === 'chat' && result.isThinking ? 'Deep Reasoning Result' : 'AI Intelligence Output'}
              </h3>
-             <div className="prose prose-sm max-w-none text-slate-800 whitespace-pre-wrap">
-               {result.text}
-             </div>
+             
+             {result.text && (
+               <div className="prose prose-sm max-w-none text-slate-700 whitespace-pre-wrap leading-relaxed">
+                 {result.text}
+               </div>
+             )}
+
+             {result.structuredVision && (
+               <div className="space-y-6">
+                 {/* Overview */}
+                 <div className="bg-slate-50 p-4 border border-slate-200 rounded-xl">
+                   <div className="flex justify-between items-start mb-2">
+                      <h4 className="font-semibold text-slate-800">Site Overview Assessment</h4>
+                      <span className={`px-2 py-1 rounded text-xs font-bold shadow-sm border ${
+                        result.structuredVision.risk_level === 'High' ? 'bg-red-50 text-red-700 border-red-200' : 
+                        result.structuredVision.risk_level === 'Medium' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                        'bg-emerald-50 text-emerald-700 border-emerald-200'
+                      }`}>
+                        {result.structuredVision.risk_level?.toUpperCase()} RISK
+                      </span>
+                   </div>
+                   <p className="text-sm text-slate-600 leading-relaxed">{result.structuredVision.overview_assessment}</p>
+                 </div>
+
+                 {/* Waste Streams Grid */}
+                 <div>
+                    <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-3">Identified Waste Streams</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                       {result.structuredVision.waste_streams?.map((stream: any, idx: number) => (
+                         <div key={idx} className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col justify-between hover:border-[#0B8F6C]/40 transition-colors">
+                           <div className="flex justify-between items-center mb-2">
+                             <span className="font-semibold text-slate-800">{stream.material}</span>
+                             <span className="text-[#0B8F6C] font-data font-bold">{stream.estimated_percentage}%</span>
+                           </div>
+                           <p className="text-xs text-slate-500">{stream.description}</p>
+                           <div className="w-full bg-slate-100 h-1 mt-3 rounded-full overflow-hidden">
+                             <div className="h-full bg-[#0B8F6C]" style={{ width: `${stream.estimated_percentage}%` }}></div>
+                           </div>
+                         </div>
+                       ))}
+                    </div>
+                 </div>
+
+                 {/* Hazards List */}
+                 {result.structuredVision.hazards_detected?.length > 0 && (
+                   <div>
+                     <h4 className="text-xs font-bold text-red-500 uppercase tracking-wider mb-3 flex items-center">
+                        <AlertTriangle className="w-4 h-4 mr-1" />
+                        HazMat & Safety Risks Detected
+                     </h4>
+                     <div className="space-y-3">
+                       {result.structuredVision.hazards_detected.map((hazard: any, idx: number) => (
+                         <div key={idx} className="bg-red-50/50 border border-red-100 rounded-xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div>
+                              <div className="flex items-center space-x-2 mb-1">
+                                <span className="font-bold text-red-800 text-sm tracking-tight">{hazard.hazard_name}</span>
+                                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-red-100 text-red-800 border border-red-200 shadow-sm uppercase">{hazard.severity}</span>
+                              </div>
+                              <p className="text-xs text-red-600/80">{hazard.action_required}</p>
+                            </div>
+                            <button className="text-xs bg-white border border-red-200 text-red-700 px-3 py-1.5 rounded-lg font-medium hover:bg-red-50 whitespace-nowrap shadow-sm">
+                              Generate Abatement Plan
+                            </button>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                 )}
+               </div>
+             )}
              
              {/* Grounding Sources */}
              {result.chunks && result.chunks.length > 0 && (

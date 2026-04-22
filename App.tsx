@@ -395,7 +395,7 @@ const App: React.FC = () => {
       case View.TWIN: return <DigitalTwin />;
       case View.INTELLIGENCE: return <Intelligence />;
       case View.EDGE: return <DigitalEDGE />;
-      case View.COMPLIANCE: return <ComplianceEngine />;
+      case View.COMPLIANCE: return <ComplianceEngine user={currentUser} />;
       case View.MARKETPLACE: return <Marketplace />;
       case View.EDUCATION: return <EducationHub />;
       case View.CREATIVE: return <CreativeStudio />;
