@@ -108,7 +108,10 @@ export default function Marketplace() {
                             </div>
                             <div className="bg-slate-50 p-2 rounded flex flex-col">
                                <span className="text-slate-400 uppercase text-[10px] mb-1">Cost Index</span>
-                               <strong className="text-slate-800 text-sm">{'₪'.repeat(supplier.Pricing_Index)}{'₪'.repeat(5 - supplier.Pricing_Index).replace(/₪/g, '<span class="text-slate-200">₪</span>')} <span className="text-slate-400 font-normal">({supplier.Pricing_Index}/5)</span></strong>
+                               <strong className="text-slate-800 text-sm">
+                                  {supplier.Pricing_Index} <span className="text-slate-400 font-normal">/ 5</span>
+                               </strong>
+                               <span className="text-[9px] text-slate-500 mt-0.5">({supplier.Pricing_Index === 5 ? 'Very Low Cost' : supplier.Pricing_Index === 1 ? 'Very High Cost' : 'Moderate Cost'})</span>
                             </div>
                          </div>
                          

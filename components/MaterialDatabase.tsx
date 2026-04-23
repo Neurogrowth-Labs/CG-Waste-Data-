@@ -273,8 +273,10 @@ export const MaterialDatabase: React.FC = () => {
                                             </span>
                                         </td>
                                         <td className="px-4 py-3 text-center">
-                                            <div className="text-slate-600 font-bold">{mat.Cost_Index}/5</div>
-                                            <div className="text-[9px] text-slate-400">Idx</div>
+                                            <div className={`text-sm font-bold ${mat.Cost_Index >= 4 ? 'text-green-600' : mat.Cost_Index === 3 ? 'text-amber-600' : 'text-red-600'}`}>
+                                                {mat.Cost_Index}/5
+                                            </div>
+                                            <div className="text-[9px] text-slate-400">{mat.Cost_Index >= 4 ? 'Low Cost' : mat.Cost_Index === 3 ? 'Moderate' : 'High Cost'}</div>
                                         </td>
                                         <td className="px-4 py-3 text-center text-slate-600 font-medium">{mat.Durability}/5</td>
                                         <td className="px-4 py-3 text-center text-slate-600 font-medium">{mat.Recyclability}/5</td>

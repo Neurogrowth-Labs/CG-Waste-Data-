@@ -1,9 +1,66 @@
 
 import { GoogleGenAI, Type, Schema, FunctionDeclaration } from "@google/genai";
 import { GeminiModel } from "../types";
+import { WASTE_CLASSES } from "../lib/wasteData";
 
 // Helper to get client. Creates new instance to ensure key is fresh.
 const getClient = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
+
+export const classifyWasteMaterial = async (inputDescription: string) => {
+  const ai = getClient();
+  const prompt = `
+    Act as an **AI Waste Classification & Diagnostics Engine** for a Circular Construction Platform.
+    
+    You will be provided with a raw description or text log of waste materials from a construction or demolition site manager (e.g., "50 tons concrete + steel").
+    
+    **Task:**
+    Classify the waste into our platform's official multi-pathway structure. Split mixed materials into their constituent streams if applicable.
+
+    **Platform Waste Classes Available:**
+    ${JSON.stringify(WASTE_CLASSES.map(wc => ({ class: wc.name, subtypes: wc.subtypes })))}
+
+    **Categorization Rules:**
+    1.  **Recyclability Score:** Must be "High", "Medium", or "Low / Difficult".
+        - High: Metals, Concrete, Asphalt, Glass
+        - Medium: Wood, Plastics, Gypsum
+        - Low: Composites, Contaminated materials
+    2.  **Redirect / Disposal Option:** Suggest the highest-value reuse or recycle pathway first before landfilling. (e.g. "Recycle as aggregate", "Extract steel at MRF").
+    3.  **Hazard Level:** Flag any hazardous materials like asbestos, lead, solvents, or contaminated soil as "High" or "Critical".
+    4.  **Distribution:** Extract quantities if provided. If an input mixes materials (e.g., "50 tons concrete and steel"), reasonably estimate the split or output two objects. If total quantity is given without split, default proportionally or keep combined if inert.
+
+    **Input:** "${inputDescription}"
+
+    Analyze the input and return a JSON array of categorized waste objects matching this schema:
+  `;
+
+  const response = await ai.models.generateContent({
+    model: GeminiModel.FLASH_3,
+    contents: prompt,
+    config: {
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.ARRAY,
+        items: {
+            type: Type.OBJECT,
+            properties: {
+                Category: { type: Type.STRING, description: "Must match one of the exact names of the 19 Waste Classes." },
+                Type: { type: Type.STRING },
+                Sub_Type: { type: Type.STRING },
+                Quantity: { type: Type.NUMBER, description: "Numerical quantity in tons (or standard measure). Estimate if mixed." },
+                Hazard_Level: { type: Type.STRING, enum: ['Low', 'Medium', 'High', 'Critical'] },
+                Recyclability_Score: { type: Type.STRING, enum: ['High', 'Medium', 'Low / Difficult'] },
+                Carbon_Impact: { type: Type.NUMBER, description: "Estimated Carbon equivalent footprint in kgCO2e of treating or transporting this." },
+                Reuse_Potential: { type: Type.STRING, enum: ['High', 'Medium', 'Low'] },
+                Disposal_Option: { type: Type.STRING, description: "Suggested Action (e.g. 'Send to local recycler for aggregate crushing')." }
+            },
+            required: ["Category", "Type", "Sub_Type", "Quantity", "Hazard_Level", "Recyclability_Score", "Disposal_Option"]
+        }
+      }
+    }
+  });
+
+  return JSON.parse(response.text || "[]");
+};
 
 export const generateText = async (prompt: string, model: string = GeminiModel.FLASH_LITE) => {
   const ai = getClient();
