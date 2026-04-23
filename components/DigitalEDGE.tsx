@@ -10,8 +10,8 @@ import {
 } from 'lucide-react';
 import { getEdgeAdvisory, analyzeConstructionPlan, predictEdgeBaselines, generateCostBenefitAnalysis, checkRegulatoryCompliance } from '../services/geminiService';
 import { EdgeProject, EdgeMaterialStream, BimMaterial } from '../types';
-import { auth, db } from '../lib/firebaseClient';
-import { collection, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
+import { auth } from '../lib/firebaseClient';
+import { supabase } from '../lib/supabaseClient';
 import { MaterialDatabase } from './MaterialDatabase';
 
 // --- Sub-components ---
@@ -273,37 +273,44 @@ const DigitalEDGE: React.FC = () => {
 
         // 2. Save Project to DB
         if (user) {
-            const projectRef = await addDoc(collection(db, 'projects'), {
+            const { data: projectData, error: projectError } = await supabase.from('projects').insert([{
                 owner_id: user.uid,
                 name: project.project_name,
-                project_type: project.project_type,
                 location: project.location,
-                gross_floor_area: project.gross_floor_area,
                 construction_phase: project.construction_phase,
                 status: 'Active'
-              });
+              }]).select('id').single();
 
             
             // Update local state with real ID
-            setProject(prev => ({ ...prev, project_id: projectRef.id }));
+            if (projectData && !projectError) {
+              setProject(prev => ({ ...prev, project_id: projectData.id }));
 
-            // 3. Save Streams to DB
-            const mappedStreams = await Promise.all(finalStreams.map(async (s) => {
-              const streamData = {
-                ...s,
-                project_id: projectRef.id,
-                evidence_status: 'Pending'
-              };
-              const streamRef = await addDoc(collection(db, 'edge_material_streams'), streamData);
-              return {
-                 ...streamData,
-                 material_id: streamRef.id
-              };
-            }));
+              // 3. Save Streams to DB
+              const mappedStreams = await Promise.all(finalStreams.map(async (s) => {
+                const streamData = {
+                  ...s,
+                  project_id: projectData.id,
+                  evidence_status: 'Pending'
+                };
+                const { data: streamResp } = await supabase.from('waste_logs').insert([{
+                  project_id: projectData.id,
+                  material_type: s.material_type,
+                  weight_kg: s.baseline_quantity_tons * 1000,
+                  destination: s.disposal_method,
+                  logged_by: user.uid
+                }]).select('id').single();
 
-            // Map DB result to frontend types
-            
-            setStreams(mappedStreams as EdgeMaterialStream[]);
+                return {
+                   ...streamData,
+                   material_id: streamResp ? streamResp.id : 'temp-id'
+                };
+              }));
+
+              // Map DB result to frontend types
+              
+              setStreams(mappedStreams as EdgeMaterialStream[]);
+            }
             setViewState('analysis');
         } else {
             // Local state fallback if no user
@@ -341,9 +348,16 @@ const DigitalEDGE: React.FC = () => {
 
     if (project.project_id !== 'new') {
         try {
-            const docRef = await addDoc(collection(db, 'edge_material_streams'), newStream);
+            const { data, error } = await supabase.from('waste_logs').insert([{
+              project_id: newStream.project_id,
+              material_type: newStream.material_type,
+              weight_kg: newStream.baseline_quantity_tons * 1000,
+              destination: newStream.disposal_method,
+              logged_by: auth.currentUser?.uid
+            }]).select('id').single();
+            if (error) throw error;
             // Replace temp ID with real ID
-            setStreams(prev => prev.map(item => item.material_id === tempId ? { ...item, material_id: docRef.id } : item));
+            setStreams(prev => prev.map(item => item.material_id === tempId ? { ...item, material_id: data.id } : item));
         } catch (e) {
             console.error("Failed to persist stream", e);
         }
@@ -353,7 +367,7 @@ const DigitalEDGE: React.FC = () => {
   const removeStream = async (id: string) => {
     setStreams(prev => prev.filter(s => s.material_id !== id));
     if (!id.startsWith('temp-') && !id.startsWith('local-')) {
-       await deleteDoc(doc(db, 'edge_material_streams', id));
+       await supabase.from('waste_logs').delete().eq('id', id);
     }
   };
 
@@ -455,18 +469,16 @@ const DigitalEDGE: React.FC = () => {
       // PERSIST TO SUPABASE
       if (project.project_id !== 'new') {
          try {
-             await updateDoc(doc(db, 'projects', project.project_id), { compliance_score: result.compliance_score });
-
+             await supabase.from('projects').update({ compliance_status: result.compliance_score.toString() }).eq('id', project.project_id);
+             
              const user = auth.currentUser;
              if (user) {
-                await addDoc(collection(db, 'audit_logs'), {
-                   user_id: user.uid,
-                   project_id: project.project_id,
-                   action: `Compliance Audit (${jurisdiction}): ${result.risk_level} Risk`,
-                   status: result.compliance_score > 80 ? 'Verified' : 'Flagged',
-                   user_role: 'Auditor',
-                   timestamp: new Date()
-                });
+                await supabase.from('waste_logs').insert([{
+                    project_id: project.project_id,
+                    logged_by: user.uid,
+                    notes: `Compliance Audit (${jurisdiction}): ${result.risk_level} Risk`,
+                    material_type: 'Audit Log'
+                }]);
              }
          } catch(e) {
              console.warn("Backend unavailable for logging", e);
@@ -509,7 +521,7 @@ const DigitalEDGE: React.FC = () => {
     // DB Update (skip for temp local items)
     if (field !== 'material_id' && field !== 'source' && field !== 'evidence_status' && !id.startsWith('temp-') && !id.startsWith('local-')) {
         try {
-            await updateDoc(doc(db, 'edge_material_streams', id), { [field]: value });
+            await supabase.from('waste_logs').update({ [field]: value }).eq('id', id);
         } catch (e) { console.error(e); }
     }
   };

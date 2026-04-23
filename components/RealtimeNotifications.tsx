@@ -1,7 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { db } from '../lib/firebaseClient';
-import { collection, query, onSnapshot, where } from 'firebase/firestore';
+import { supabase } from '../lib/supabaseClient';
 import { AlertTriangle, CheckCircle, Info, Truck, X, AlertOctagon } from 'lucide-react';
 
 export interface Toast {
@@ -26,42 +25,35 @@ export const RealtimeNotifications: React.FC = () => {
   };
 
   useEffect(() => {
-    // Subscribe to Waste Manifest updates (Transport Status)
-    const manifestsQuery = query(collection(db, 'waste_manifests'));
-    const unsubscribeManifests = onSnapshot(manifestsQuery, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'modified') {
-          const newData = change.doc.data();
-          if (newData.status === 'Verified') {
-             addToast('Transport Verified', `Manifest ${newData.manifest_number} confirmed at destination.`, 'success');
-          } else if (newData.status === 'Rejected') {
-             addToast('Load Rejected', `Manifest ${newData.manifest_number} rejected at facility! Action required.`, 'error');
-          } else if (newData.status === 'In Transit') {
-             addToast('Logistics Update', `Vehicle for ${newData.manifest_number} is now in transit.`, 'info');
+    // Subscribe to waste_logs updates (Transport Status)
+    const logsSubscription = supabase.channel('waste_logs_notifications')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'waste_logs' }, (payload) => {
+          const newData = payload.new;
+          if (newData.notes?.includes('Verified')) {
+             addToast('Transport Verified', `Log ${newData.id} confirmed at destination.`, 'success');
+          } else if (newData.notes?.includes('Rejected')) {
+             addToast('Load Rejected', `Log ${newData.id} rejected at facility! Action required.`, 'error');
+          } else if (newData.notes?.includes('In Transit')) {
+             addToast('Logistics Update', `Vehicle for ${newData.id} is now in transit.`, 'info');
           }
-        }
-      });
-    });
+      }).subscribe();
 
     // Subscribe to Project updates (Compliance Alerts)
-    const projectsQuery = query(collection(db, 'projects'));
-    const unsubscribeProjects = onSnapshot(projectsQuery, (snapshot) => {
-      snapshot.docChanges().forEach((change) => {
-        if (change.type === 'modified') {
-          const newData = change.doc.data();
+    const projectsSubscription = supabase.channel('projects_notifications')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'projects' }, (payload) => {
+          const newData = payload.new;
+          
           if (newData.hazmat_status === 'Detected') {
              addToast('Compliance Alert', `Critical: Hazardous materials detected at ${newData.name}.`, 'warning');
           }
-          if (newData.compliance_score && newData.compliance_score < 50) {
-             addToast('Compliance Risk', `Compliance score for ${newData.name} has dropped critically to ${newData.compliance_score}%.`, 'error');
+          if (newData.compliance_status && parseInt(newData.compliance_status) < 50) {
+             addToast('Compliance Risk', `Compliance score for ${newData.name} has dropped critically to ${newData.compliance_status}%.`, 'error');
           }
-        }
-      });
-    });
+      }).subscribe();
 
     return () => {
-      unsubscribeManifests();
-      unsubscribeProjects();
+      supabase.removeChannel(logsSubscription);
+      supabase.removeChannel(projectsSubscription);
     };
   }, []);
 

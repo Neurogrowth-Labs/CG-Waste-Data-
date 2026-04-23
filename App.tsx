@@ -17,9 +17,9 @@ import { ProjectSourceWorkflow, WasteTrackingWorkflow } from './components/Workf
 import { Auth } from './components/Auth';
 import { View, User } from './types';
 import { Mic, Plus, AlertTriangle, CheckCircle, AlertOctagon, Loader2, Truck, Clock, MapPin } from 'lucide-react';
-import { auth, db } from './lib/firebaseClient';
+import { auth } from './lib/firebaseClient';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { collection, query, orderBy, onSnapshot, getDoc, doc } from 'firebase/firestore';
+import { supabase } from './lib/supabaseClient';
 
 const ProjectsView = () => {
   const [showNewProject, setShowNewProject] = useState(false);
@@ -27,20 +27,21 @@ const ProjectsView = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const q = query(collection(db, 'projects'), orderBy('created_at', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const projs: any[] = [];
-      snapshot.forEach((doc) => {
-        projs.push({ id: doc.id, ...doc.data() });
-      });
-      setProjects(projs);
+    const fetchProjects = async () => {
+      const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
+      if (data) setProjects(data);
+      if (error) console.error("Error fetching projects:", error);
       setLoading(false);
-    }, (error) => {
-      console.error("Error fetching projects:", error);
-      setLoading(false);
-    });
+    };
+    
+    fetchProjects();
 
-    return () => unsubscribe();
+    const subscription = supabase.channel('public:projects')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
+        fetchProjects();
+      }).subscribe();
+
+    return () => { supabase.removeChannel(subscription); };
   }, []);
 
   if (showNewProject) {
@@ -134,20 +135,21 @@ const TrackingView = () => {
    const [loading, setLoading] = useState(true);
 
    useEffect(() => {
-     const q = query(collection(db, 'waste_manifests'), orderBy('created_at', 'desc'));
-     const unsubscribe = onSnapshot(q, (snapshot) => {
-       const mans: any[] = [];
-       snapshot.forEach((doc) => {
-         mans.push({ id: doc.id, ...doc.data() });
-       });
-       setManifests(mans);
+     const fetchManifests = async () => {
+       const { data, error } = await supabase.from('waste_logs').select('*').order('created_at', { ascending: false });
+       if (data) setManifests(data);
+       if (error) console.error('Error fetching manifests:', error);
        setLoading(false);
-     }, (error) => {
-       console.error("Error fetching manifests:", error);
-       setLoading(false);
-     });
+     };
 
-     return () => unsubscribe();
+     fetchManifests();
+
+     const subscription = supabase.channel('public:waste_logs')
+       .on('postgres_changes', { event: '*', schema: 'public', table: 'waste_logs' }, () => {
+         fetchManifests();
+       }).subscribe();
+
+     return () => { supabase.removeChannel(subscription); };
    }, []);
 
    return (
@@ -255,11 +257,9 @@ const App: React.FC = () => {
 
   const fetchProfile = async (userId: string, email: string) => {
     try {
-      const docRef = doc(db, 'profiles', userId);
-      const docSnap = await getDoc(docRef);
+      const { data, error } = await supabase.from('users').select('*').eq('id', userId).single();
       
-      if (docSnap.exists()) {
-        const data = docSnap.data();
+      if (data && !error) {
         setCurrentUser({
           name: data.full_name || 'User',
           email: email,

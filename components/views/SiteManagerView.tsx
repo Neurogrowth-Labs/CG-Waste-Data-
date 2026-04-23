@@ -8,8 +8,7 @@ import {
   Wrench, Activity, CheckCircle, ArrowRight, LayoutDashboard, Brain,
   Search, LineChart
 } from 'lucide-react';
-import { db } from '../../lib/firebaseClient';
-import { collection, query, onSnapshot } from 'firebase/firestore';
+import { supabase } from '../../lib/supabaseClient';
 
 const KPICard = ({ title, value, icon: Icon, trend, trendValue, colorClass = "bg-white", onClick }: any) => (
   <div 
@@ -56,14 +55,12 @@ const SiteManagerView = () => {
   const [step, setStep] = useState(0);
 
   useEffect(() => {
-    const q = query(collection(db, 'waste_manifests'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data: any[] = [];
-      snapshot.forEach(doc => data.push({id: doc.id, ...doc.data()}));
-      if(data.length > 0) {
-        const total = data.reduce((acc, curr) => acc + (curr.weight || 0), 0);
-        const diverted = data.reduce((acc, curr) => ['Concrete', 'Metal', 'Wood'].includes(curr.material) ? acc + curr.weight : acc, 0);
-        const bMap = data.reduce((acc: any, curr) => ({...acc, [curr.material]: (acc[curr.material] || 0) + curr.weight}), {});
+    const fetchManifests = async () => {
+      const { data, error } = await supabase.from('waste_logs').select('*');
+      if (data && data.length > 0) {
+        const total = data.reduce((acc, curr) => acc + (curr.weight_kg || 0), 0);
+        const diverted = data.reduce((acc, curr) => ['Concrete', 'Metal', 'Wood'].includes(curr.material_type) ? acc + (curr.weight_kg || 0) : acc, 0);
+        const bMap = data.reduce((acc: any, curr) => ({...acc, [curr.material_type]: (acc[curr.material_type] || 0) + (curr.weight_kg || 0)}), {});
         setMetrics({
            totalWaste: total,
            diversionRate: total > 0 ? (diverted / total) * 100 : 0,
@@ -71,8 +68,16 @@ const SiteManagerView = () => {
         });
       }
       setLoading(false);
-    });
-    return () => unsubscribe();
+    };
+
+    fetchManifests();
+
+    const subscription = supabase.channel('public:waste_logs_siteManager')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'waste_logs' }, () => {
+        fetchManifests();
+      }).subscribe();
+
+    return () => { supabase.removeChannel(subscription); };
   }, []);
 
   const navigateTo = (workflow: any) => {

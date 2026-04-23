@@ -2,8 +2,8 @@
 import React, { useState, useEffect } from 'react';
 import { Check, ChevronRight, Truck, Scale, MapPin, ClipboardCheck, ArrowRight, Wand2, Calculator, Save, Loader2, Calendar, History, Layers, Info, Sparkles, Printer } from 'lucide-react';
 import { predictProjectWaste } from '../services/geminiService';
-import { auth, db } from '../lib/firebaseClient';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { auth } from '../lib/firebaseClient';
+import { supabase } from '../lib/supabaseClient';
 
 // --- Shared Components ---
 
@@ -114,28 +114,25 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
       if (!user) throw new Error("No user logged in");
 
       // 2. Insert Project
-      const projectRef = await addDoc(collection(db, 'projects'), {
+      const { data: projectData, error: projectError } = await supabase.from('projects').insert([{
           owner_id: user.uid,
           name: formData.name,
-          project_type: formData.type.includes('Commercial') ? 'Commercial' : 'Residential',
           construction_phase: formData.phase.includes('Demolition') ? 'Demolition' : 'Construction',
-          gross_floor_area: parseInt(formData.area),
           hazmat_status: formData.hazmat ? 'Potential' : 'Clear',
           status: 'Active',
           location: 'New Site (Pending)',
-          compliance_score: 95,
-          createdAt: serverTimestamp()
-      });
+          compliance_status: '95', // Mapping compliance_score to compliance_status for now
+      }]).select('*').single();
+
+      if (projectError) throw projectError;
 
       // 3. Log Action
-      await addDoc(collection(db, 'audit_logs'), {
-        user_id: user.uid,
-        project_id: projectRef.id,
-        action: 'Created New Project',
-        status: 'Verified',
-        user_role: 'manager',
-        timestamp: serverTimestamp()
-      });
+      await supabase.from('waste_logs').insert([{
+        logged_by: user.uid,
+        project_id: projectData.id,
+        notes: 'Created New Project',
+        material_type: 'Audit Log'
+      }]);
       
     } catch (e) {
       console.error("Failed to create project:", e);
@@ -444,16 +441,16 @@ export const WasteTrackingWorkflow: React.FC = () => {
       const newManifestId = `MNF-${Math.floor(Math.random() * 90000) + 10000}`;
       
       // 2. Insert to DB (Real Data for Tracking)
-      await addDoc(collection(db, 'waste_manifests'), {
-         manifest_number: newManifestId,
-         material: loadData.material,
-         weight: parseFloat(loadData.weight),
-         hauler: loadData.hauler,
+      const { error } = await supabase.from('waste_logs').insert([{
+         notes: `Manifest: ${newManifestId}`,
+         material_type: loadData.material,
+         weight_kg: parseFloat(loadData.weight),
+         contractor: loadData.hauler,
          destination: loadData.destination,
-         status: 'Pending', // Initial status
-         user_id: user.uid,
-         timestamp: serverTimestamp()
-      });
+         logged_by: user.uid
+      }]);
+
+      if (error) throw error;
 
       setManifestId(newManifestId);
       setStep(3);

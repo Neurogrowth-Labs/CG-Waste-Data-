@@ -5,9 +5,9 @@ import {
   ChevronRight, Check, AlertTriangle, Fingerprint, Smartphone, Mail, Loader2, Sparkles
 } from 'lucide-react';
 import { User } from '../types';
-import { auth, db } from '../lib/firebaseClient';
+import { auth } from '../lib/firebaseClient';
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { supabase } from '../lib/supabaseClient';
 
 interface AuthProps {
   onLogin: (user: User) => void;
@@ -146,14 +146,21 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     try {
       const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.signupPassword);
       
-      // Save profile info to firestore to simulate the supabase profile
-      await setDoc(doc(db, 'profiles', userCredential.user.uid), {
+      // Save profile info to supabase
+      const { error: profileError } = await supabase.from('users').upsert({
+         id: userCredential.user.uid,
+         email: formData.email,
          full_name: formData.fullName,
          role: formData.role,
          organization: formData.orgName,
          jurisdiction: formData.jurisdiction,
-         standards: formData.standards
+         standards: formData.standards,
+         mfa_method: formData.mfaMethod
       });
+
+      if (profileError) {
+         console.error("Failed to crate supabase user profile", profileError);
+      }
 
       // Auto-login happens on signup usually, App.tsx listener will catch it
     } catch (err: any) {

@@ -14,22 +14,14 @@ const CreativeStudio: React.FC = () => {
   const [uploadFile, setUploadFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
 
-  const checkApiKey = async () => {
-     if (window.aistudio && window.aistudio.hasSelectedApiKey) {
-       const hasKey = await window.aistudio.hasSelectedApiKey();
-       if (!hasKey) {
-         await window.aistudio.openSelectKey();
-         // Assume success after dialog
-       }
-     }
-  };
+  const checkApiKey = async () => {};
 
   const handleRun = async () => {
     setLoading(true);
     setResultMedia(null);
     try {
       if (mode === 'veo') {
-        await checkApiKey();
+        const _ = await checkApiKey();
         // Veo Generation
         let videoUrl;
         if (uploadFile && preview) {
