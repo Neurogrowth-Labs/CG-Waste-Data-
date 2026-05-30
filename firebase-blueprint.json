@@ -1,0 +1,98 @@
+{
+  "entities": {
+    "UserProfile": {
+      "title": "UserProfile",
+      "description": "User profile tied to Firebase Auth",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "manager", "transporter", "recycler", "executive", "regulator", "investor", "user"] },
+        "organization": { "type": "string" },
+        "full_name": { "type": "string" }
+      },
+      "required": ["email", "role"]
+    },
+    "Project": {
+      "title": "Project",
+      "description": "Construction or demolition project",
+      "type": "object",
+      "properties": {
+        "owner_id": { "type": "string" },
+        "name": { "type": "string" },
+        "project_type": { "type": "string" },
+        "construction_phase": { "type": "string" },
+        "gross_floor_area": { "type": "number" },
+        "hazmat_status": { "type": "string" },
+        "status": { "type": "string" },
+        "location": { "type": "string" },
+        "compliance_score": { "type": "number" }
+      },
+      "required": ["owner_id", "name"]
+    },
+    "WasteManifest": {
+      "title": "WasteManifest",
+      "description": "Logistics tracking document for waste loads",
+      "type": "object",
+      "properties": {
+        "manifest_number": { "type": "string" },
+        "material": { "type": "string" },
+        "weight": { "type": "number" },
+        "hauler": { "type": "string" },
+        "destination": { "type": "string" },
+        "status": { "type": "string" },
+        "user_id": { "type": "string" }
+      },
+      "required": ["manifest_number", "material", "user_id"]
+    },
+    "AuditLog": {
+      "title": "AuditLog",
+      "description": "Immutable ledger of platform events",
+      "type": "object",
+      "properties": {
+        "user_id": { "type": "string" },
+        "project_id": { "type": "string" },
+        "action": { "type": "string" },
+        "status": { "type": "string" },
+        "user_role": { "type": "string" }
+      },
+      "required": ["user_id", "action"]
+    },
+    "EdgeMaterialStream": {
+      "title": "EdgeMaterialStream",
+      "description": "Subcollection under projects for EDGE materials",
+      "type": "object",
+      "properties": {
+        "material_type": { "type": "string" },
+        "category": { "type": "string" },
+        "baseline_quantity_tons": { "type": "number" },
+        "improved_quantity_tons": { "type": "number" },
+        "recovery_percentage": { "type": "number" },
+        "disposal_method": { "type": "string" },
+        "evidence_status": { "type": "string" }
+      },
+      "required": ["material_type"]
+    }
+  },
+  "firestore": {
+    "/profiles/{userId}": {
+      "schema": { "$ref": "UserProfile" },
+      "description": "User profiles"
+    },
+    "/projects/{projectId}": {
+      "schema": { "$ref": "Project" },
+      "description": "Root collection representing projects"
+    },
+    "/waste_manifests/{manifestId}": {
+      "schema": { "$ref": "WasteManifest" },
+      "description": "Root collection representing waste manifests"
+    },
+    "/audit_logs/{logId}": {
+      "schema": { "$ref": "AuditLog" },
+      "description": "System audit logs"
+    },
+    "/projects/{projectId}/edge_material_streams/{streamId}": {
+      "schema": { "$ref": "EdgeMaterialStream" },
+      "description": "Edge material streams for a project"
+    }
+  }
+}
