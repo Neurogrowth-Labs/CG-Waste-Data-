@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { 
   Factory, Eye, TestTube, Box, DollarSign, Store, ArrowRight,
-  TrendingDown, TrendingUp, RefreshCw, CheckCircle, Scan, MapPin, Search
+  TrendingDown, TrendingUp, RefreshCw, CheckCircle, Scan, MapPin, Search, Truck
 } from 'lucide-react';
 
 const StepWizard = ({ steps, currentStep }: { steps: string[], currentStep: number }) => (

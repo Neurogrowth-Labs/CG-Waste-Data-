@@ -28,7 +28,10 @@ export const RealtimeNotifications: React.FC = () => {
     // Subscribe to waste_logs updates (Transport Status)
     const logsSubscription = supabase.channel('waste_logs_notifications')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'waste_logs' }, (payload) => {
+          if (!payload) return;
           const newData = payload.new;
+          if (!newData) return;
+          
           if (newData.notes?.includes('Verified')) {
              addToast('Transport Verified', `Log ${newData.id} confirmed at destination.`, 'success');
           } else if (newData.notes?.includes('Rejected')) {
@@ -41,7 +44,9 @@ export const RealtimeNotifications: React.FC = () => {
     // Subscribe to Project updates (Compliance Alerts)
     const projectsSubscription = supabase.channel('projects_notifications')
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'projects' }, (payload) => {
+          if (!payload) return;
           const newData = payload.new;
+          if (!newData) return;
           
           if (newData.hazmat_status === 'Detected') {
              addToast('Compliance Alert', `Critical: Hazardous materials detected at ${newData.name}.`, 'warning');

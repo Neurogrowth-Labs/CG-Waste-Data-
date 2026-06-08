@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Check, ChevronRight, Truck, Scale, MapPin, ClipboardCheck, ArrowRight, Wand2, Calculator, Save, Loader2, Calendar, History, Layers, Info, Sparkles, Printer } from 'lucide-react';
 import { predictProjectWaste } from '../services/geminiService';
-import { auth } from '../lib/firebaseClient';
 import { supabase } from '../lib/supabaseClient';
 
 // --- Shared Components ---
@@ -41,12 +40,12 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
-    type: 'Commercial Renovation',
-    phase: 'Demolition',
-    buildingYear: '1985',
-    historicalData: 'none',
-    area: '5000',
-    duration: '6',
+    type: '',
+    phase: '',
+    buildingYear: '',
+    historicalData: '',
+    area: '',
+    duration: '',
     concrete: 0,
     metal: 0,
     wood: 0,
@@ -110,12 +109,13 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
     setIsSaving(true);
     try {
       // 1. Get current user
-      const user = auth.currentUser;
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error("No user logged in");
 
       // 2. Insert Project
       const { data: projectData, error: projectError } = await supabase.from('projects').insert([{
-          owner_id: user.uid,
+          owner_id: user.id,
           name: formData.name,
           construction_phase: formData.phase.includes('Demolition') ? 'Demolition' : 'Construction',
           hazmat_status: formData.hazmat ? 'Potential' : 'Clear',
@@ -128,7 +128,7 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
 
       // 3. Log Action
       await supabase.from('waste_logs').insert([{
-        logged_by: user.uid,
+        logged_by: user.id,
         project_id: projectData.id,
         notes: 'Created New Project',
         material_type: 'Audit Log'
@@ -136,11 +136,13 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
       
     } catch (e) {
       console.error("Failed to create project:", e);
-      // Proceed even on failure to avoid blocking user (Demo Mode behavior)
+      alert("Failed to create project. Please ensure you are logged in and connected.");
+      return; // Block progression on failure
     } finally {
       setIsSaving(false);
-      onComplete();
     }
+    // Only proceed if successful
+    onComplete();
   };
 
   return (
@@ -183,6 +185,7 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
                         onChange={e => setFormData({...formData, type: e.target.value})}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm"
                         >
+                        <option value="" disabled>Select Type...</option>
                         <option value="Commercial Renovation">Commercial Renovation</option>
                         <option value="Demolition">Demolition</option>
                         <option value="New Construction">New Construction</option>
@@ -195,6 +198,7 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
                         onChange={e => setFormData({...formData, phase: e.target.value})}
                         className="w-full px-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm"
                         >
+                        <option value="" disabled>Select Phase...</option>
                         <option value="Demolition">Demolition & Strip-out</option>
                         <option value="Structural">Structural / Shell</option>
                         <option value="Fit-out">Interior Fit-out</option>
@@ -220,6 +224,7 @@ export const ProjectSourceWorkflow: React.FC<{ onComplete: () => void; onCancel:
                                 onChange={e => setFormData({...formData, historicalData: e.target.value})}
                                 className="w-full pl-9 pr-4 py-2 border border-slate-300 rounded-lg outline-none bg-white text-sm appearance-none"
                             >
+                                <option value="" disabled>Select historical data...</option>
                                 <option value="none">None (Use Global Avg)</option>
                                 <option value="similar_urban">Site Alpha (Urban)</option>
                                 <option value="similar_industrial">Site Beta (Industrial)</option>
@@ -394,48 +399,28 @@ export const WasteTrackingWorkflow: React.FC = () => {
   const [isVerified, setIsVerified] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
   
-  // Smart Defaults State
+  // State without mock default values
   const [loadData, setLoadData] = useState({
-    material: 'Concrete',
-    weight: '12.4',
-    hauler: 'EcoHaul Logistics (Preferred)',
-    destination: 'City Recycling Center #4 (3.2 miles)'
+    material: '',
+    weight: '',
+    hauler: '',
+    destination: ''
   });
 
-  // Smart Defaults for Logistics based on Material
+  // Automatically update haulers when a material is selected but don't force a default immediately if unselected
   useEffect(() => {
-    if (loadData.material === 'Concrete') {
-      setLoadData(prev => ({
-        ...prev, 
-        destination: 'City Recycling Center #4 (3.2 miles)',
-        hauler: 'EcoHaul Logistics (Preferred)'
-      }));
-    } else if (loadData.material === 'Metal') {
-      setLoadData(prev => ({
-        ...prev, 
-        destination: 'Metro Scrap Yard (8.1 miles)',
-        hauler: 'Site Fleet #4'
-      }));
-    } else if (loadData.material === 'Hazardous') { 
-       setLoadData(prev => ({
-        ...prev, 
-        destination: 'Specialized HazMat Facility (45 miles)',
-        hauler: 'Certified HazMat Transport'
-      }));
-    } else if (loadData.material === 'Wood') {
-      setLoadData(prev => ({
-        ...prev, 
-        destination: 'Bio-Mass Energy Plant (12 miles)',
-        hauler: 'Green Waste Services'
-      }));
-    }
+    if (!loadData.material) return;
+    
+    // Instead of forcing static defaults automatically for a real application, 
+    // it's better to fetch from a database. Here we just let the user pick it manually or we would populate dropdowns.
   }, [loadData.material]);
 
   const generateManifest = async () => {
     setLoading(true);
     try {
       // 1. Get current user
-      const user = auth.currentUser;
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
       if (!user) throw new Error("Authentication required");
 
       const newManifestId = `MNF-${Math.floor(Math.random() * 90000) + 10000}`;
@@ -447,7 +432,7 @@ export const WasteTrackingWorkflow: React.FC = () => {
          weight_kg: parseFloat(loadData.weight),
          contractor: loadData.hauler,
          destination: loadData.destination,
-         logged_by: user.uid
+         logged_by: user.id
       }]);
 
       if (error) throw error;
@@ -559,6 +544,7 @@ export const WasteTrackingWorkflow: React.FC = () => {
                         onChange={e => setLoadData({...loadData, hauler: e.target.value})}
                         className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm outline-none"
                       >
+                        <option value="">Select a hauler...</option>
                         <option>EcoHaul Logistics (Preferred)</option>
                         <option>City Waste Services</option>
                         <option>Site Fleet #4</option>
@@ -581,6 +567,7 @@ export const WasteTrackingWorkflow: React.FC = () => {
                         onChange={e => setLoadData({...loadData, destination: e.target.value})}
                         className="w-full bg-white border border-slate-300 rounded px-3 py-2 text-sm outline-none"
                       >
+                        <option value="">Select a destination...</option>
                          <option>City Recycling Center #4 (3.2 miles)</option>
                          <option>Regional Landfill (15.4 miles)</option>
                          <option>Recovery Yard B (8.1 miles)</option>

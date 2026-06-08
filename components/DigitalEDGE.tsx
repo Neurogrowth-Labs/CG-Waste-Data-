@@ -10,7 +10,6 @@ import {
 } from 'lucide-react';
 import { getEdgeAdvisory, analyzeConstructionPlan, predictEdgeBaselines, generateCostBenefitAnalysis, checkRegulatoryCompliance } from '../services/geminiService';
 import { EdgeProject, EdgeMaterialStream, BimMaterial } from '../types';
-import { auth } from '../lib/firebaseClient';
 import { supabase } from '../lib/supabaseClient';
 import { MaterialDatabase } from './MaterialDatabase';
 
@@ -99,10 +98,7 @@ const SamplingCalculator = () => {
 };
 
 const AuditTrail = () => {
-    const [comments, setComments] = useState([
-        { id: 1, author: 'Auditor', role: 'Auditor', text: 'Documentation Requirements: Concise text to describe requirement 1 [located in specs.pdf, page 4]. Parameter: U-Value [0.45 W/m2K]. Checked and verified.', date: '2 hours ago' },
-        { id: 2, author: 'Certifier Reviewer', role: 'Certifier', text: 'In case of rejection, the reason for rejection must be very clear. Please clarify the wall thickness assumption in MEM05.', date: '1 hour ago' }
-    ]);
+    const [comments, setComments] = useState<any[]>([]);
     const [newComment, setNewComment] = useState('');
 
     const addComment = () => {
@@ -214,10 +210,10 @@ const DigitalEDGE: React.FC = () => {
 
   // Financial Optimization State
   const [costInputs, setCostInputs] = useState({
-     tippingFee: 120, // $/ton
-     transportCost: 4.5, // $/km
-     landfillDist: 25, // km
-     recyclerDist: 15 // km
+     tippingFee: 0,
+     transportCost: 0,
+     landfillDist: 0,
+     recyclerDist: 0
   });
   const [financials, setFinancials] = useState<any>(null);
   const [loadingFinancials, setLoadingFinancials] = useState(false);
@@ -244,7 +240,8 @@ const DigitalEDGE: React.FC = () => {
     setIsForecasting(true);
 
     try {
-        const user = auth.currentUser;
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
         
         // 1. Forecast Data
         const forecast = await predictEdgeBaselines(project);
@@ -274,7 +271,7 @@ const DigitalEDGE: React.FC = () => {
         // 2. Save Project to DB
         if (user) {
             const { data: projectData, error: projectError } = await supabase.from('projects').insert([{
-                owner_id: user.uid,
+                owner_id: user.id,
                 name: project.project_name,
                 location: project.location,
                 construction_phase: project.construction_phase,
@@ -298,7 +295,7 @@ const DigitalEDGE: React.FC = () => {
                   material_type: s.material_type,
                   weight_kg: s.baseline_quantity_tons * 1000,
                   destination: s.disposal_method,
-                  logged_by: user.uid
+                  logged_by: user.id
                 }]).select('id').single();
 
                 return {
@@ -348,12 +345,13 @@ const DigitalEDGE: React.FC = () => {
 
     if (project.project_id !== 'new') {
         try {
+            const { data: { session } } = await supabase.auth.getSession();
             const { data, error } = await supabase.from('waste_logs').insert([{
               project_id: newStream.project_id,
               material_type: newStream.material_type,
               weight_kg: newStream.baseline_quantity_tons * 1000,
               destination: newStream.disposal_method,
-              logged_by: auth.currentUser?.uid
+              logged_by: session?.user?.id
             }]).select('id').single();
             if (error) throw error;
             // Replace temp ID with real ID
@@ -372,18 +370,47 @@ const DigitalEDGE: React.FC = () => {
   };
 
   // --- Logic: BIM Integration ---
-  const handleBimUpload = () => {
+  const handleBimUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files?.[0]) return;
     setIsProcessingBim(true);
-    // Mock parsing
-    setTimeout(() => {
-      const extracted: BimMaterial[] = [
-        { id: 'b1', element_name: 'Basic Wall: Cast-in-Place Concrete 300mm', bim_quantity: 4500, unit: 'm3', edge_category: 'Concrete', estimated_waste_rate: 5 },
-        { id: 'b2', element_name: 'Structural Column: Steel W300x150', bim_quantity: 120, unit: 'm3', edge_category: 'Steel', estimated_waste_rate: 15 }, 
-        { id: 'b3', element_name: 'Floor: Timber Composite Deck', bim_quantity: 2200, unit: 'm2', edge_category: 'Timber', estimated_waste_rate: 8 },
-      ];
-      setBimMaterials(extracted);
-      setIsProcessingBim(false);
-    }, 1500);
+    const file = e.target.files[0];
+    const reader = new FileReader();
+
+    reader.onload = async (event) => {
+        try {
+           const csvText = event.target?.result as string;
+           // Realistically in a robust system this would parse the CSV and map elements.
+           // For now, we will perform a very simple naive CSV extraction to avoid the mock.
+           const lines = csvText.split('\n');
+           const extracted: BimMaterial[] = [];
+           
+           for (let i = 1; i < Math.min(lines.length, 10); i++) {
+               const parts = lines[i].split(',');
+               if (parts.length >= 3) {
+                   extracted.push({
+                        id: `b${i}`,
+                        element_name: parts[0]?.trim() || `Material ${i}`,
+                        bim_quantity: parseFloat(parts[1]) || 0,
+                        unit: (parts[2]?.trim() as "m3"|"m2"|"kg") || 'kg',
+                        edge_category: parts[0]?.includes('Concrete') ? 'Concrete' : parts[0]?.includes('Steel') ? 'Steel' : 'Timber',
+                        estimated_waste_rate: 10
+                   });
+               }
+           }
+           
+           if (extracted.length === 0) {
+               alert("Could not extract any valid materials from the CSV. Please ensure it has Name, Quantity, Unit columns.");
+           } else {
+               setBimMaterials(extracted);
+           }
+        } catch (e) {
+           console.error("Error processing file", e);
+           alert("Failed to parse the file.");
+        } finally {
+           setIsProcessingBim(false);
+        }
+    };
+    reader.readAsText(file);
   };
 
   const syncBimToEdge = () => {
@@ -471,11 +498,12 @@ const DigitalEDGE: React.FC = () => {
          try {
              await supabase.from('projects').update({ compliance_status: result.compliance_score.toString() }).eq('id', project.project_id);
              
-             const user = auth.currentUser;
+             const { data: { session } } = await supabase.auth.getSession();
+             const user = session?.user;
              if (user) {
                 await supabase.from('waste_logs').insert([{
                     project_id: project.project_id,
-                    logged_by: user.uid,
+                    logged_by: user.id,
                     notes: `Compliance Audit (${jurisdiction}): ${result.risk_level} Risk`,
                     material_type: 'Audit Log'
                 }]);
@@ -1125,14 +1153,14 @@ const DigitalEDGE: React.FC = () => {
                     <p className="text-sm text-slate-500 max-w-sm mx-auto mb-6">
                       Upload your Revit export or IFC file to extract accurate material quantities and waste forecasts.
                     </p>
-                    <button 
-                      onClick={handleBimUpload}
-                      disabled={isProcessingBim}
-                      className="px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 disabled:opacity-50 flex items-center"
-                    >
-                      {isProcessingBim ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <UploadCloud className="w-4 h-4 mr-2" />}
-                      {isProcessingBim ? 'Extracting Data...' : 'Select IFC / CSV File'}
-                    </button>
+                    <label className="px-6 py-3 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800 flex items-center cursor-pointer transition-colors relative">
+                      {isProcessingBim ? (
+                        <><Loader2 className="w-4 h-4 animate-spin mr-2" /> Extracting Data...</>
+                      ) : (
+                        <><UploadCloud className="w-4 h-4 mr-2" /> Select IFC / CSV File</>
+                      )}
+                      <input type="file" accept=".csv" onChange={handleBimUpload} className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" disabled={isProcessingBim} />
+                    </label>
                  </div>
 
                  {bimMaterials.length > 0 && (

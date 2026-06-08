@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer 
 } from 'recharts';
@@ -49,36 +50,48 @@ const StepWizard = ({ steps, currentStep }: { steps: string[], currentStep: numb
 );
 
 const SiteManagerView = () => {
-  const [metrics, setMetrics] = useState({ totalWaste: 0, diversionRate: 0, materialBreakdown: [] as any[] });
-  const [loading, setLoading] = useState(true);
   const [activeWorkflow, setActiveWorkflow] = useState<'dashboard' | 'capture' | 'spike_alert' | 'optimization' | 'risk_factor' | 'waste_details' | 'waste_simulation'>('dashboard');
   const [step, setStep] = useState(0);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    const fetchManifests = async () => {
-      const { data, error } = await supabase.from('waste_logs').select('*');
+  const { data: metrics = { totalWaste: 0, diversionRate: 0, materialBreakdown: [] as any[] }, isLoading: loading } = useQuery({
+    queryKey: ['site_metrics'],
+    queryFn: async () => {
+      const { data, error } = await supabase.from('waste_logs').select('*').limit(100);
+      if (error) throw error;
+      
+      let total = 0;
+      let diverted = 0;
+      const bMap: Record<string, number> = {};
+
       if (data && data.length > 0) {
-        const total = data.reduce((acc, curr) => acc + (curr.weight_kg || 0), 0);
-        const diverted = data.reduce((acc, curr) => ['Concrete', 'Metal', 'Wood'].includes(curr.material_type) ? acc + (curr.weight_kg || 0) : acc, 0);
-        const bMap = data.reduce((acc: any, curr) => ({...acc, [curr.material_type]: (acc[curr.material_type] || 0) + (curr.weight_kg || 0)}), {});
-        setMetrics({
-           totalWaste: total,
-           diversionRate: total > 0 ? (diverted / total) * 100 : 0,
-           materialBreakdown: Object.keys(bMap).map(k => ({ name: k, value: bMap[k] })).sort((a,b) => b.value - a.value)
+        data.forEach(curr => {
+          const weight = curr.weight || 0;
+          const material = curr.material || '';
+          total += weight;
+          if (['Concrete', 'Metal', 'Wood'].includes(material)) {
+            diverted += weight;
+          }
+          bMap[material] = (bMap[material] || 0) + weight;
         });
       }
-      setLoading(false);
-    };
 
-    fetchManifests();
+      return {
+        totalWaste: total,
+        diversionRate: total > 0 ? (diverted / total) * 100 : 0,
+        materialBreakdown: Object.keys(bMap).map(k => ({ name: k, value: bMap[k] })).sort((a,b) => b.value - a.value)
+      };
+    }
+  });
 
+  useEffect(() => {
     const subscription = supabase.channel('public:waste_logs_siteManager')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'waste_logs' }, () => {
-        fetchManifests();
+        queryClient.invalidateQueries({ queryKey: ['site_metrics'] });
       }).subscribe();
 
     return () => { supabase.removeChannel(subscription); };
-  }, []);
+  }, [queryClient]);
 
   const navigateTo = (workflow: any) => {
      setActiveWorkflow(workflow);

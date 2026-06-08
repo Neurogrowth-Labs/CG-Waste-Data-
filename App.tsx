@@ -16,141 +16,33 @@ import { RealtimeNotifications } from './components/RealtimeNotifications';
 import { ProjectSourceWorkflow, WasteTrackingWorkflow } from './components/Workflows';
 import { Auth } from './components/Auth';
 import { View, User } from './types';
-import { Mic, Plus, AlertTriangle, CheckCircle, AlertOctagon, Loader2, Truck, Clock, MapPin } from 'lucide-react';
-import { auth } from './lib/firebaseClient';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
+import { Mic, Plus, AlertTriangle, CheckCircle, AlertOctagon, Loader2, Truck, Clock, MapPin, Search } from 'lucide-react';
 import { supabase } from './lib/supabaseClient';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useDebounce } from 'use-debounce';
 
-const ProjectsView = () => {
-  const [showNewProject, setShowNewProject] = useState(false);
-  const [projects, setProjects] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchProjects = async () => {
-      const { data, error } = await supabase.from('projects').select('*').order('created_at', { ascending: false });
-      if (data) setProjects(data);
-      if (error) console.error("Error fetching projects:", error);
-      setLoading(false);
-    };
-    
-    fetchProjects();
-
-    const subscription = supabase.channel('public:projects')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
-        fetchProjects();
-      }).subscribe();
-
-    return () => { supabase.removeChannel(subscription); };
-  }, []);
-
-  if (showNewProject) {
-    return (
-      <div className="h-full flex items-center justify-center">
-        <div className="w-full max-w-2xl">
-          <ProjectSourceWorkflow 
-            onComplete={() => setShowNewProject(false)} 
-            onCancel={() => setShowNewProject(false)} 
-          />
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-slate-800">Portfolio</h2>
-        <button 
-          onClick={() => setShowNewProject(true)}
-          className="flex items-center px-4 py-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Project
-        </button>
-      </div>
-
-      <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-        <table className="w-full text-left text-sm text-slate-600">
-          <thead className="bg-slate-50 text-slate-700 font-semibold uppercase text-xs border-b border-slate-200">
-            <tr>
-              <th className="p-4">Project Name</th>
-              <th className="p-4">Location</th>
-              <th className="p-4">Status</th>
-              <th className="p-4">Phase</th>
-              <th className="p-4">HazMat Status</th>
-              <th className="p-4">Compliance</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {loading ? (
-              <tr><td colSpan={6} className="p-6 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" /></td></tr>
-            ) : projects.length === 0 ? (
-              <tr><td colSpan={6} className="p-6 text-center text-slate-400">No projects found. Create one to get started.</td></tr>
-            ) : (
-              projects.map(p => (
-                <tr key={p.id} className="hover:bg-slate-50 transition-colors">
-                  <td className="p-4 font-medium text-slate-900">{p.name}</td>
-                  <td className="p-4">{p.location || 'N/A'}</td>
-                  <td className="p-4">
-                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                       p.status === 'Active' ? 'bg-green-100 text-green-700' : 
-                       p.status === 'Planning' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'
-                     }`}>{p.status}</span>
-                  </td>
-                  <td className="p-4">{p.construction_phase}</td>
-                  <td className="p-4">
-                    <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
-                      p.hazmat_status === 'Detected' ? 'bg-red-100 text-red-700' :
-                      p.hazmat_status === 'Potential' ? 'bg-amber-100 text-amber-700' :
-                      'bg-green-100 text-green-700'
-                    }`}>
-                       {p.hazmat_status === 'Detected' ? <AlertOctagon className="w-3 h-3 mr-1.5" /> : 
-                        p.hazmat_status === 'Potential' ? <AlertTriangle className="w-3 h-3 mr-1.5" /> : 
-                        <CheckCircle className="w-3 h-3 mr-1.5" />}
-                       {p.hazmat_status}
-                    </span>
-                  </td>
-                  <td className="p-4">
-                     <div className="w-full bg-slate-200 rounded-full h-1.5 max-w-[100px] mb-1">
-                       <div className={`h-1.5 rounded-full ${
-                         (p.compliance_score || 0) >= 80 ? 'bg-green-500' : 
-                         (p.compliance_score || 0) >= 50 ? 'bg-amber-500' : 'bg-red-500'
-                       }`} style={{width: `${p.compliance_score || 0}%`}}></div>
-                     </div>
-                     <span className="text-xs">{p.compliance_score || 0}%</span>
-                  </td>
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-};
+import { ProjectsView } from './components/views/ProjectsView';
 
 const TrackingView = () => {
-   const [manifests, setManifests] = useState<any[]>([]);
-   const [loading, setLoading] = useState(true);
+   const queryClient = useQueryClient();
+
+   const { data: manifests = [], isLoading } = useQuery({
+     queryKey: ['manifests'],
+     queryFn: async () => {
+       const { data, error } = await supabase.from('waste_logs').select('*').order('created_at', { ascending: false }).limit(20);
+       if (error) throw error;
+       return data || [];
+     }
+   });
 
    useEffect(() => {
-     const fetchManifests = async () => {
-       const { data, error } = await supabase.from('waste_logs').select('*').order('created_at', { ascending: false });
-       if (data) setManifests(data);
-       if (error) console.error('Error fetching manifests:', error);
-       setLoading(false);
-     };
-
-     fetchManifests();
-
      const subscription = supabase.channel('public:waste_logs')
        .on('postgres_changes', { event: '*', schema: 'public', table: 'waste_logs' }, () => {
-         fetchManifests();
+         queryClient.invalidateQueries({ queryKey: ['manifests'] });
        }).subscribe();
 
      return () => { supabase.removeChannel(subscription); };
-   }, []);
+   }, [queryClient]);
 
    return (
     <div className="flex flex-col h-full space-y-8">
@@ -178,8 +70,27 @@ const TrackingView = () => {
                 </div>
              </div>
              <div className="flex-1 overflow-y-auto">
-                {loading ? (
-                   <div className="p-8 flex justify-center"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+                {isLoading ? (
+                   <table className="w-full text-sm text-left">
+                      <thead className="bg-white text-slate-500 font-medium sticky top-0 shadow-sm z-10">
+                         <tr>
+                            <th className="px-4 py-3">Manifest ID</th>
+                            <th className="px-4 py-3">Material</th>
+                            <th className="px-4 py-3">Hauler</th>
+                            <th className="px-4 py-3">Status</th>
+                         </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                         {Array.from({ length: 5 }).map((_, i) => (
+                            <tr key={i}>
+                               <td className="px-4 py-3"><div className="h-4 bg-slate-200 rounded animate-pulse w-24 mb-1"></div><div className="h-3 bg-slate-200 rounded animate-pulse w-16"></div></td>
+                               <td className="px-4 py-3"><div className="h-4 bg-slate-200 rounded animate-pulse w-20 mb-1"></div><div className="h-3 bg-slate-200 rounded animate-pulse w-12"></div></td>
+                               <td className="px-4 py-3"><div className="h-4 bg-slate-200 rounded animate-pulse w-28 mb-1"></div><div className="h-3 bg-slate-200 rounded animate-pulse w-16"></div></td>
+                               <td className="px-4 py-3"><div className="h-6 bg-slate-200 rounded animate-pulse w-16"></div></td>
+                            </tr>
+                         ))}
+                      </tbody>
+                   </table>
                 ) : manifests.length === 0 ? (
                    <div className="p-8 text-center text-slate-400 text-sm">No active manifests found.</div>
                 ) : (
@@ -241,10 +152,45 @@ const App: React.FC = () => {
   const [loadingSession, setLoadingSession] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      setLoadingSession(true);
-      if (user && user.email) {
-        await fetchProfile(user.uid, user.email);
+    // Initial fetch
+    const fetchSession = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error("Supabase auth error:", error);
+        }
+
+        if (session && session.user && session.user.email) {
+          setCurrentUser({
+            name: 'Loading Profile...',
+            email: session.user.email,
+            role: 'manager',
+            organization: '',
+            jurisdiction: '',
+            standards: []
+          });
+          setLoadingSession(false);
+          fetchProfile(session.user.id, session.user.email);
+        } else {
+          setCurrentUser(null);
+          setCurrentView(View.DASHBOARD);
+          setLoadingSession(false);
+        }
+      } catch (e) {
+        console.error("Session fetch failed:", e);
+        setCurrentUser(null);
+        setCurrentView(View.DASHBOARD);
+        setLoadingSession(false);
+      }
+    };
+    
+    fetchSession();
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session && session.user && session.user.email) {
+        setLoadingSession(false);
+        await fetchProfile(session.user.id, session.user.email);
       } else {
         setCurrentUser(null);
         setCurrentView(View.DASHBOARD);
@@ -252,7 +198,7 @@ const App: React.FC = () => {
       }
     });
 
-    return () => unsubscribe();
+    return () => subscription.unsubscribe();
   }, []);
 
   const fetchProfile = async (userId: string, email: string) => {
@@ -296,16 +242,16 @@ const App: React.FC = () => {
   const refreshProfile = async () => {
     if (!currentUser) return;
     setLoadingSession(true);
-    const user = auth.currentUser;
-    if (user && user.email) {
-      await fetchProfile(user.uid, user.email);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session && session.user && session.user.email) {
+      await fetchProfile(session.user.id, session.user.email);
     }
     setLoadingSession(false);
   };
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
     } catch (e) {
       console.error("Sign out error", e);
       setCurrentUser(null);
@@ -318,9 +264,11 @@ const App: React.FC = () => {
   };
 
   if (loadingSession) {
-    return <div className="h-screen w-screen flex items-center justify-center bg-slate-50">
-      <Loader2 className="w-10 h-10 text-green-600 animate-spin" />
-    </div>;
+    return (
+      <div className="h-screen w-screen flex flex-col items-center justify-center bg-slate-50 space-y-4">
+        <Loader2 className="w-10 h-10 text-green-600 animate-spin" />
+      </div>
+    );
   }
 
   if (!currentUser) {
