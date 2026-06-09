@@ -1,4 +1,8 @@
 import React from 'react';
+import { Award, ShieldCheck, Globe, LockKeyhole } from 'lucide-react';
+import heroImage from '../../src/assets/images/hero_illustration_no_text_1781034180640.png';
+import footerImage from '../../src/assets/images/footer_background_1781033126567.png';
+import complianceImage from '../../src/assets/images/compliance_visual_1781034202814.png';
 
 interface LandingViewProps {
   onRequestAccess: () => void;
@@ -80,28 +84,26 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
 
         /* ── HERO ── */
         .landing-hero {
-          min-height: 100vh;
-          display: grid; grid-template-columns: 1.1fr 0.9fr;
-          align-items: center; gap: 40px;
-          padding: 120px 48px 80px;
-          max-width: 1300px; margin: 0 auto;
+          min-height: 75vh;
+          display: flex;
+          align-items: center;
+          padding: 80px 48px 20px;
           position: relative; overflow: hidden;
         }
         .hero-bg-wrapper {
           position: absolute; inset: 0; z-index: 0; width: 100vw; margin-left: calc(-50vw + 50%);
         }
-        .hero-bg-grid {
-          position: absolute; inset: 0; z-index: 0;
-          background-image:
-            linear-gradient(rgba(46,107,69,0.08) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(46,107,69,0.08) 1px, transparent 1px);
-          background-size: 48px 48px;
+        .hero-bg-wrapper::after {
+          content: ''; position: absolute; inset: 0;
+          background: rgba(17, 19, 20, 0.4);
+        }
+        .hero-bg-image {
+          width: 100%; height: 100%; object-fit: cover; opacity: 1;
         }
         .hero-bg-gradient {
-          position: absolute; inset: 0; z-index: 0;
-          background: radial-gradient(ellipse 70% 60% at 65% 50%, rgba(46,107,69,0.18) 0%, transparent 70%);
+          display: none;
         }
-        .hero-content { position: relative; z-index: 1; }
+        .hero-content { position: relative; z-index: 2; max-width: 600px; text-shadow: none; }
         .hero-eyebrow {
           display: inline-flex; align-items: center; gap: 8px;
           background: rgba(91,173,111,0.12); border: 1px solid rgba(91,173,111,0.25);
@@ -273,23 +275,38 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
         /* ── BREEAM / COMPLIANCE ── */
         .compliance-section { background: var(--moss); }
         .comp-grid { display: grid; grid-template-columns: 1fr; gap: 64px; align-items: center; }
-        @media (min-width: 900px) { .comp-grid { grid-template-columns: 1fr 1fr; } }
+        @media (min-width: 900px) { .comp-grid { grid-template-columns: 1fr 1.1fr; } }
         .comp-scores { display: flex; flex-direction: column; gap: 16px; margin-top: 40px; }
         .score-row { display: flex; align-items: center; gap: 16px; }
-        .score-label { font-size: 13px; color: var(--sage); width: 140px; flex-shrink: 0; }
+        .score-label { font-size: 13px; font-weight: 500; color: var(--sage); width: 140px; flex-shrink: 0; }
         .score-bar-wrap { flex: 1; }
-        .score-track { height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden; }
-        .score-fill { height: 100%; border-radius: 4px; }
-        .score-val { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: var(--white); width: 44px; text-align: right; }
-        .compliance-badges { display: grid; grid-template-columns: 1fr; gap: 16px; }
+        .score-track { height: 6px; background: rgba(0,0,0,0.3); border-radius: 4px; overflow: hidden; }
+        .score-fill { height: 100%; border-radius: 4px; box-shadow: 0 0 10px rgba(91,173,111,0.5); }
+        .score-val { font-family: 'Space Mono', monospace; font-size: 13px; font-weight: 700; color: var(--offwhite); width: 44px; text-align: right; }
+        
+        .comp-visual-col {
+           position: relative; border-radius: 16px; overflow: hidden;
+           border: 1px solid rgba(255,255,255,0.08); background: rgba(10,10,10,0.5);
+           box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+        .comp-main-image { width: 100%; height: 280px; object-fit: cover; opacity: 0.9; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .compliance-badges { display: grid; grid-template-columns: 1fr; gap: 0; }
         @media (min-width: 600px) { .compliance-badges { grid-template-columns: 1fr 1fr; } }
         .comp-badge {
-          background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
-          border-radius: 12px; padding: 20px; text-align: center;
+          background: transparent; border: none; border-bottom: 1px solid rgba(255,255,255,0.05);
+          border-right: 1px solid rgba(255,255,255,0.05);
+          border-radius: 0; padding: 24px 20px; text-align: left;
+          display: flex; flex-direction: column; gap: 12px;
+          transition: background 0.2s;
         }
-        .comp-badge-icon { font-size: 28px; margin-bottom: 10px; display: block; }
-        .comp-badge-title { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
-        .comp-badge-sub { font-size: 11px; color: var(--sage); }
+        .comp-badge:hover { background: rgba(255,255,255,0.02); }
+        .comp-badge:nth-child(even) { border-right: none; }
+        .comp-badge:nth-child(3), .comp-badge:nth-child(4) { border-bottom: none; }
+        
+        .cb-header { display: flex; align-items: center; gap: 12px; }
+        .cb-icon-wrap { width: 36px; height: 36px; border-radius: 8px; background: rgba(91,173,111,0.1); display: flex; align-items: center; justify-content: center; color: var(--lime); }
+        .comp-badge-title { font-size: 14px; font-weight: 600; color: var(--offwhite); }
+        .comp-badge-sub { font-size: 13px; color: var(--sage); line-height: 1.5; }
 
         /* ── TEAM / USE CASES ── */
         .use-section { background: var(--steel); }
@@ -353,9 +370,17 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
 
         /* ── FOOTER ── */
         .landing-footer {
+          position: relative;
           background: #111314; padding: 56px 48px 32px;
           border-top: 1px solid rgba(255,255,255,0.07);
+          overflow: hidden;
         }
+        .footer-bg {
+          position: absolute; inset: 0; z-index: 0;
+          width: 100%; height: 100%; object-fit: cover; opacity: 0.15;
+          mix-blend-mode: color-dodge;
+        }
+        .footer-content { position: relative; z-index: 1; }
         .footer-grid { display: grid; grid-template-columns: 1fr; gap: 48px; margin-bottom: 48px; }
         @media (min-width: 768px) { .footer-grid { grid-template-columns: 2fr 1fr 1fr 1fr; } }
         .footer-brand p { font-size: 13px; color: var(--concrete); line-height: 1.7; max-width: 280px; margin-top: 14px; }
@@ -405,7 +430,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
         {/* HERO */}
         <section className="landing-hero" id="about">
           <div className="hero-bg-wrapper">
-            <div className="hero-bg-grid" />
+            <img src={heroImage} alt="" className="hero-bg-image" />
             <div className="hero-bg-gradient" />
           </div>
 
@@ -419,56 +444,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
             <div className="hero-actions">
               <button className="btn-primary" onClick={onRequestAccess}>Explore the Platform →</button>
               <button className="btn-outline">See Live Demo</button>
-            </div>
-          </div>
-
-          <div className="hero-visual hidden lg:flex">
-            <div className="hero-card-stack">
-
-              <div className="metric-card metric-card-main">
-                <div className="mc-label">Total waste diverted this month</div>
-                <div className="mc-value">24,810 <span>↑ 12%</span></div>
-                <div className="mc-sub">tonnes across 47 active sites</div>
-              </div>
-
-              <div className="metric-row">
-                <div className="metric-card sm">
-                  <div className="mc-label">Recycled</div>
-                  <div className="mc-value">78% <span style={{color: 'var(--lime)'}}>▲</span></div>
-                  <div className="mc-sub">vs 62% target</div>
-                </div>
-                <div className="metric-card sm">
-                  <div className="mc-label">Carbon saved</div>
-                  <div className="mc-value">1,420 <span style={{fontSize: '12px', color: 'var(--sage)'}}>tCO₂e</span></div>
-                  <div className="mc-sub">this quarter</div>
-                </div>
-              </div>
-
-              <div className="waste-gauge-card">
-                <div className="gauge-title">Waste stream breakdown</div>
-                <div className="gauge-bars">
-                  <div className="gauge-item">
-                    <span className="gauge-name">Concrete</span>
-                    <div className="gauge-track"><div className="gauge-fill" style={{width: '72%', background: 'var(--lime)'}} /></div>
-                    <span className="gauge-pct">72%</span>
-                  </div>
-                  <div className="gauge-item">
-                    <span className="gauge-name">Steel & Metal</span>
-                    <div className="gauge-track"><div className="gauge-fill" style={{width: '48%', background: '#82AADF'}} /></div>
-                    <span className="gauge-pct">48%</span>
-                  </div>
-                  <div className="gauge-item">
-                    <span className="gauge-name">Timber</span>
-                    <div className="gauge-track"><div className="gauge-fill" style={{width: '61%', background: 'var(--amber-light)'}} /></div>
-                    <span className="gauge-pct">61%</span>
-                  </div>
-                  <div className="gauge-item">
-                    <span className="gauge-name">Hazmat</span>
-                    <div className="gauge-track"><div className="gauge-fill" style={{width: '19%', background: '#E26B6B'}} /></div>
-                    <span className="gauge-pct">19%</span>
-                  </div>
-                </div>
-              </div>
             </div>
           </div>
         </section>
@@ -669,26 +644,37 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
                 </div>
               </div>
             </div>
-            <div className="compliance-badges">
-              <div className="comp-badge">
-                <span className="comp-badge-icon">🏆</span>
-                <div className="comp-badge-title">BREEAM</div>
-                <div className="comp-badge-sub">Outstanding verified</div>
-              </div>
-              <div className="comp-badge">
-                <span className="comp-badge-icon">⭐</span>
-                <div className="comp-badge-title">Green Star</div>
-                <div className="comp-badge-sub">6-Star certified</div>
-              </div>
-              <div className="comp-badge">
-                <span className="comp-badge-icon">🌍</span>
-                <div className="comp-badge-title">ISO 14001</div>
-                <div className="comp-badge-sub">Environmental management</div>
-              </div>
-              <div className="comp-badge">
-                <span className="comp-badge-icon">🔒</span>
-                <div className="comp-badge-title">NWMS</div>
-                <div className="comp-badge-sub">Compliant manifest system</div>
+            <div className="comp-visual-col">
+              <img src={complianceImage} alt="Compliance visualization" className="comp-main-image" />
+              <div className="compliance-badges">
+                <div className="comp-badge">
+                  <div className="cb-header">
+                    <div className="cb-icon-wrap"><Award size={20} /></div>
+                    <div className="comp-badge-title">BREEAM</div>
+                  </div>
+                  <div className="comp-badge-sub">Outstanding verified tracking</div>
+                </div>
+                <div className="comp-badge">
+                  <div className="cb-header">
+                    <div className="cb-icon-wrap"><ShieldCheck size={20} /></div>
+                    <div className="comp-badge-title">Green Star SA</div>
+                  </div>
+                  <div className="comp-badge-sub">6-Star ready reporting</div>
+                </div>
+                <div className="comp-badge">
+                  <div className="cb-header">
+                    <div className="cb-icon-wrap"><Globe size={20} /></div>
+                    <div className="comp-badge-title">ISO 14001</div>
+                  </div>
+                  <div className="comp-badge-sub">Environmental scope logic</div>
+                </div>
+                <div className="comp-badge">
+                  <div className="cb-header">
+                    <div className="cb-icon-wrap"><LockKeyhole size={20} /></div>
+                    <div className="comp-badge-title">NWMS</div>
+                  </div>
+                  <div className="comp-badge-sub">Compliant manifest system</div>
+                </div>
               </div>
             </div>
           </div>
@@ -776,7 +762,9 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
 
         {/* FOOTER */}
         <footer className="landing-footer">
-          <div className="footer-grid">
+          <img src={footerImage} alt="" className="footer-bg" />
+          <div className="footer-content">
+            <div className="footer-grid">
             <div className="footer-brand">
               <div className="nav-logo">
                 <div className="logo-mark">CG</div>
@@ -830,6 +818,7 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
               <span className="fcert">GREEN STAR SA</span>
               <span className="fcert">POPIA COMPLIANT</span>
             </div>
+          </div>
           </div>
         </footer>
       </div>
