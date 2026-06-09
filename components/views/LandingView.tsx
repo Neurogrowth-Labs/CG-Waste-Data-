@@ -66,14 +66,29 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
           font-weight: 500; cursor: pointer; transition: background 0.2s;
         }
         .nav-cta:hover { background: var(--lime); }
+        .nav-badges {
+          display: none;
+        }
+        @media (min-width: 1024px) {
+          .nav-badges {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-right: 20px;
+          }
+        }
 
         /* ── HERO ── */
         .landing-hero {
           min-height: 100vh;
-          display: grid; grid-template-columns: 1fr 1fr;
-          align-items: center; gap: 0;
+          display: grid; grid-template-columns: 1.1fr 0.9fr;
+          align-items: center; gap: 40px;
           padding: 120px 48px 80px;
+          max-width: 1300px; margin: 0 auto;
           position: relative; overflow: hidden;
+        }
+        .hero-bg-wrapper {
+          position: absolute; inset: 0; z-index: 0; width: 100vw; margin-left: calc(-50vw + 50%);
         }
         .hero-bg-grid {
           position: absolute; inset: 0; z-index: 0;
@@ -378,25 +393,28 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
             <li><a href="#analytics">Analytics</a></li>
             <li><a href="#about">About</a></li>
           </ul>
-          <button className="nav-cta" onClick={onRequestAccess}>Request Access →</button>
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <div className="nav-badges">
+              <span className="fcert" style={{ background: 'var(--leaf)', color: 'white', borderColor: 'transparent' }}>BREEAM Verified</span>
+              <span className="fcert">ISO 14001</span>
+            </div>
+            <button className="nav-cta" onClick={onRequestAccess}>Request Access →</button>
+          </div>
         </nav>
 
         {/* HERO */}
         <section className="landing-hero" id="about">
-          <div className="hero-bg-grid" />
-          <div className="hero-bg-gradient" />
+          <div className="hero-bg-wrapper">
+            <div className="hero-bg-grid" />
+            <div className="hero-bg-gradient" />
+          </div>
 
           <div className="hero-content">
-            <div className="hero-eyebrow">
-              <span className="eyebrow-dot" />
-              Live Intelligence Platform · South Africa
-            </div>
             <h1>
-              Where <em>demolition waste</em> meets
-              data intelligence
+              Intelligent <em>C&D Waste</em> Management
             </h1>
             <p className="hero-sub">
-              CG WasteData transforms construction and demolition waste streams into real-time compliance intelligence — mapped to BREEAM, Green Star, and SANS standards across every site.
+              Transforming how the construction, demolition, and waste recovery sectors manage material flows, compliance, and circular economy outcomes. Turning Waste Data into Circular Value.
             </p>
             <div className="hero-actions">
               <button className="btn-primary" onClick={onRequestAccess}>Explore the Platform →</button>
@@ -406,8 +424,6 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
 
           <div className="hero-visual hidden lg:flex">
             <div className="hero-card-stack">
-              <div className="floating-badge badge-breeam">BREEAM Verified</div>
-              <div className="floating-badge badge-iso">ISO 14001</div>
 
               <div className="metric-card metric-card-main">
                 <div className="mc-label">Total waste diverted this month</div>
@@ -494,31 +510,38 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
               <p className="section-sub">From skip-level tracking to AI-powered manifests, CG WasteData gives project managers, EHS teams and sustainability officers a single source of truth.</p>
               <div className="platform-modules">
                 <div className="module-card">
-                  <div className="module-icon mod-green">🏗️</div>
+                  <div className="module-icon mod-green">☁️</div>
                   <div className="module-text">
-                    <h3>Site waste tracking</h3>
-                    <p>IoT-connected weighbridges and QR-tagged skips feed real-time data into every project's waste register.</p>
+                    <h3>CG Waste Intelligence Cloud</h3>
+                    <p>A centralized SaaS operating environment providing real-time waste data visibility, project monitoring dashboards, and AI-driven reporting.</p>
                   </div>
                 </div>
                 <div className="module-card">
-                  <div className="module-icon mod-amber">🤖</div>
+                  <div className="module-icon mod-amber">📟</div>
                   <div className="module-text">
-                    <h3>AI manifest generation</h3>
-                    <p>Auto-classify waste streams and generate NWMS-compliant manifests — no paperwork, no errors.</p>
+                    <h3>C&D Waste Digital Twin Monitoring</h3>
+                    <p>Digital modelling for tracking waste flows, project performance, and recovery opportunities across full asset lifecycles.</p>
                   </div>
                 </div>
                 <div className="module-card">
-                  <div className="module-icon mod-blue">📊</div>
+                  <div className="module-icon mod-blue">📋</div>
                   <div className="module-text">
-                    <h3>Compliance dashboard</h3>
-                    <p>Live scoring against BREEAM Wat 01–05, Green Star, and SANS 10400 thresholds for every site.</p>
+                    <h3>Green Compliance Management Suite</h3>
+                    <p>Integrated tools supporting environmental regulations, circular economy reporting, ESG disclosures, and green building standards.</p>
                   </div>
                 </div>
                 <div className="module-card">
                   <div className="module-icon mod-teal">🔄</div>
                   <div className="module-text">
-                    <h3>Circular economy marketplace</h3>
-                    <p>Match surplus materials to verified buyers — concrete, steel, timber — before they ever reach landfill.</p>
+                    <h3>Construction Waste Marketplace</h3>
+                    <p>A digital exchange connecting waste generators, recyclers, processors, and buyers through intelligent matching.</p>
+                  </div>
+                </div>
+                <div className="module-card">
+                  <div className="module-icon" style={{background: 'rgba(212,130,10,0.25)'}}>🌿</div>
+                  <div className="module-text">
+                    <h3>Edge Building Design Consultancy</h3>
+                    <p>Green building advisory, resource-efficient design intelligence, and ESG certification readiness support.</p>
                   </div>
                 </div>
               </div>
@@ -674,59 +697,69 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
         {/* USE CASES */}
         <section className="landing-section use-section" id="analytics">
           <div style={{textAlign: 'center'}}>
-            <div className="section-eyebrow">Built for your role</div>
+            <div className="section-eyebrow">Stakeholders We Empower</div>
             <h2 className="section-title">One platform. Every stakeholder.</h2>
-            <p className="section-sub" style={{margin: '0 auto'}}>Whether you're on the ground or in the boardroom, CG WasteData speaks your language.</p>
+            <p className="section-sub" style={{margin: '0 auto'}}>Providing end-to-end digital solutions across the full C&D waste value chain.</p>
           </div>
-          <div className="use-grid">
-            <div className="use-card">
-              <span className="use-icon">👷</span>
-              <div className="use-title">Site Managers</div>
-              <div className="use-desc">Daily skip logs, QR tags, and real-time alerts. No more paper manifests or compliance surprises.</div>
-            </div>
-            <div className="use-card">
-              <span className="use-icon">🌿</span>
-              <div className="use-title">EHS Officers</div>
-              <div className="use-desc">Automated NWMS reporting, hazmat chain of custody, and auditor-ready exports in one click.</div>
-            </div>
+          <div className="use-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
             <div className="use-card">
               <span className="use-icon">📐</span>
-              <div className="use-title">Project Developers</div>
-              <div className="use-desc">Green certification scoring baked into project delivery — track BREEAM points in real time.</div>
+              <div className="use-title">Architects & Designers</div>
+              <div className="use-desc">Supporting sustainable building planning and waste-conscious design.</div>
             </div>
             <div className="use-card">
-              <span className="use-icon">🏦</span>
-              <div className="use-title">Investors & ESG</div>
-              <div className="use-desc">Portfolio-level waste intelligence with verifiable carbon diversion data for ESG reporting.</div>
+              <span className="use-icon">👷</span>
+              <div className="use-title">Construction & Demolition Firms</div>
+              <div className="use-desc">Driving operational efficiency, compliance, and material recovery.</div>
+            </div>
+            <div className="use-card">
+              <span className="use-icon">♻️</span>
+              <div className="use-title">Recycling & Recovery Companies</div>
+              <div className="use-desc">Unlocking supply intelligence and marketplace opportunities.</div>
+            </div>
+            <div className="use-card">
+              <span className="use-icon">🏢</span>
+              <div className="use-title">Property Developers</div>
+              <div className="use-desc">Improving project sustainability and reducing waste costs.</div>
+            </div>
+            <div className="use-card">
+              <span className="use-icon">⚖️</span>
+              <div className="use-title">Government & Regulators</div>
+              <div className="use-desc">Enabling digital oversight, reporting, and environmental governance.</div>
+            </div>
+            <div className="use-card">
+              <span className="use-icon">📈</span>
+              <div className="use-title">Infrastructure Investors & Green Funds</div>
+              <div className="use-desc">Providing sustainability intelligence for responsible investment.</div>
             </div>
           </div>
         </section>
 
         {/* IMPACT */}
         <section className="landing-section impact-section">
-          <div className="section-eyebrow">Impact</div>
-          <h2 className="section-title">Real outcomes. Measured.</h2>
+          <div className="section-eyebrow">Impact Outcomes</div>
+          <h2 className="section-title">What Organizations Achieve</h2>
           <div className="impact-grid">
             <div className="impact-big">
               <div>
-                <div style={{fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.7, marginBottom: '16px'}}>Client story · Johannesburg</div>
-                <div className="impact-quote">"We cut landfill waste by 61% on our flagship mixed-use development. CG WasteData made BREEAM Outstanding possible — our certifiers had everything they needed before we even asked."</div>
+                <div style={{fontSize: '11px', letterSpacing: '0.1em', textTransform: 'uppercase', opacity: 0.7, marginBottom: '16px'}}>Reduced Landfill Dependency</div>
+                <div className="impact-quote">"Higher waste diversion rates through intelligent tracking and recovery optimization, transitioning from fragmented management to intelligent resource management."</div>
               </div>
               <div className="impact-author">
-                <div className="author-avatar">TM</div>
+                <div className="author-avatar">CG</div>
                 <div>
-                  <div className="author-name">Themba Molefe</div>
-                  <div className="author-role">Head of Sustainability, Growthpoint Properties</div>
+                  <div className="author-name">Waste Valorization</div>
+                  <div className="author-role">Enhanced profitability through circular assets</div>
                 </div>
               </div>
             </div>
             <div className="impact-stat-card">
-              <div className="isc-num">61%</div>
-              <div className="isc-label">Average landfill diversion improvement after 12 months on platform</div>
+              <div className="isc-num">ESG</div>
+              <div className="isc-label">Improved scores and green certification readiness via automated reporting</div>
             </div>
             <div className="impact-stat-card">
-              <div className="isc-num">R2.3M</div>
-              <div className="isc-label">Average annual material recovery value per large development project</div>
+              <div className="isc-num">ROI</div>
+              <div className="isc-label">Greater recycling and circular reuse through marketplace material exchange</div>
             </div>
           </div>
         </section>
@@ -752,7 +785,11 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
                   <div className="logo-sub">Intelligence Engine</div>
                 </div>
               </div>
-              <p>The smart waste intelligence platform for South Africa's green construction sector — from site skip to circular economy.</p>
+              <p>The smart waste intelligence platform for the green construction sector — from site skip to circular economy.</p>
+              <p style={{ marginTop: '12px', fontSize: '13px', color: 'var(--lime)' }}>
+                <a href="https://www.cgwastedata.co.za" style={{ color: 'inherit', textDecoration: 'none' }}>www.cgwastedata.co.za</a><br />
+                <a href="mailto:waste@cgwastedata.co.za" style={{ color: 'inherit', textDecoration: 'none' }}>waste@cgwastedata.co.za</a>
+              </p>
             </div>
             <div className="footer-col">
               <h4>Platform</h4>
