@@ -22,6 +22,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from 'use-debounce';
 
 import { ProjectsView } from './components/views/ProjectsView';
+import { LandingView } from './components/views/LandingView';
 
 const TrackingView = () => {
    const queryClient = useQueryClient();
@@ -150,6 +151,7 @@ const App: React.FC = () => {
   const [currentView, setCurrentView] = useState<View>(View.DASHBOARD);
   const [showLive, setShowLive] = useState(false);
   const [loadingSession, setLoadingSession] = useState(true);
+  const [showAuth, setShowAuth] = useState(false);
 
   useEffect(() => {
     // Initial fetch
@@ -272,7 +274,10 @@ const App: React.FC = () => {
   }
 
   if (!currentUser) {
-    return <Auth onLogin={handleManualLogin} />;
+    if (showAuth) {
+      return <Auth onLogin={handleManualLogin} />;
+    }
+    return <LandingView onRequestAccess={() => setShowAuth(true)} />;
   }
 
   const renderContent = () => {

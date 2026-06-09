@@ -159,6 +159,10 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         if (profileError) {
            console.error("Failed to crate supabase user profile", profileError);
         }
+        
+        if (!data.session) {
+          setError("Registration successful! Please check your email to verify your account.");
+        }
       }
     } catch (err: any) {
       console.error("Signup error:", err);
@@ -168,6 +172,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       } else {
          setError(msg || 'Signup failed');
       }
+    } finally {
       setLoading(false);
     }
   };
