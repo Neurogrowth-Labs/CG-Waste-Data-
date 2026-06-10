@@ -2,7 +2,6 @@
 import React, { useState } from 'react';
 import { User } from '../types';
 import { Shield, Bell, User as UserIcon, Lock, FileText, ChevronRight, Save, LogOut, Loader2, Check } from 'lucide-react';
-import { auth } from '../lib/firebaseClient';
 import { supabase } from '../lib/supabaseClient';
 
 interface SettingsProps {
@@ -29,13 +28,14 @@ const Settings: React.FC<SettingsProps> = ({ user, onLogout, onProfileUpdate }) 
     setSaved(false);
 
     try {
-      const authUser = auth.currentUser;
+      const { data: { session } } = await supabase.auth.getSession();
+      const authUser = session?.user;
       if (!authUser) throw new Error("No authenticated user found.");
 
       const { error: profileError } = await supabase.from('users').update({
         full_name: formData.name,
         organization: formData.organization,
-      }).eq('id', authUser.uid);
+      }).eq('id', authUser.id);
 
       if (profileError) throw profileError;
 

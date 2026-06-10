@@ -709,8 +709,9 @@ export const editImage = async (prompt: string, base64Image: string, mimeType: s
   });
   // Extract image
   for (const part of response.candidates?.[0]?.content?.parts || []) {
-    if (part.inlineData) {
-      return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+    const p = part as any;
+    if (p.inlineData) {
+      return `data:${p.inlineData.mimeType};base64,${p.inlineData.data}`;
     }
   }
   return null;
@@ -729,8 +730,9 @@ export const generateHighQualityImage = async (prompt: string, aspectRatio: stri
     }
   });
   for (const part of response.candidates?.[0]?.content?.parts || []) {
-    if (part.inlineData) {
-      return `data:${part.inlineData.mimeType};base64,${part.inlineData.data}`;
+    const p = part as any;
+    if (p.inlineData) {
+      return `data:${p.inlineData.mimeType};base64,${p.inlineData.data}`;
     }
   }
   return null;
@@ -741,7 +743,7 @@ export const generateVideo = async (prompt: string, imageBase64?: string, mimeTy
   let operation;
   
   if (imageBase64 && mimeType) {
-    operation = await ai.models.generateVideos({
+    operation = await (ai.models as any).generateVideos({
       model: GeminiModel.VEO_FAST,
       prompt: prompt,
       image: {
@@ -755,7 +757,7 @@ export const generateVideo = async (prompt: string, imageBase64?: string, mimeTy
       }
     });
   } else {
-    operation = await ai.models.generateVideos({
+    operation = await (ai.models as any).generateVideos({
       model: GeminiModel.VEO_FAST,
       prompt: prompt,
       config: {

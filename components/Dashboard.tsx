@@ -3,8 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Building2, HardHat, Recycle, Truck, Globe, Shield, UserCog, LogOut, Code, AlertTriangle, Blocks
 } from 'lucide-react';
-import { auth } from '../lib/firebaseClient';
-import { signOut } from 'firebase/auth';
+import { supabase } from '../lib/supabaseClient';
 
 import SiteManagerView from './views/SiteManagerView';
 import TransporterView from './views/TransporterView';
@@ -24,7 +23,7 @@ const Dashboard: React.FC<DashboardProps> = ({ initialRole = 'manager' }) => {
 
   const handleLogout = async () => {
     try {
-      await signOut(auth);
+      await supabase.auth.signOut();
     } catch (error) {
       console.error("Error signing out: ", error);
     }

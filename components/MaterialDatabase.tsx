@@ -102,7 +102,7 @@ export const MaterialDatabase: React.FC = () => {
     const runAIRecollection = async () => {
         setIsRecommending(true);
         try {
-            // Usually this would call Gemini. We'll use the mocked response from geminiService
+            // Call Gemini to get real insights and recommendations based on the actual material database
             const res = await getMaterialRecommendations(projectContext, MATERIALS);
             setAiRecommendations(res);
         } catch (e) {
