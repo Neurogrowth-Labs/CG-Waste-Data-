@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 420" preserveAspectRatio="none" role="img" aria-labelledby="title">
+  <title id="title">Green abstract footer background</title>
+  <defs><linearGradient id="bg" x1="0" x2="1"><stop stop-color="#022c22"/><stop offset=".55" stop-color="#065f46"/><stop offset="1" stop-color="#0f766e"/></linearGradient></defs>
+  <rect width="1440" height="420" fill="url(#bg)"/>
+  <path d="M0 290c160-80 280-110 430-70 220 60 350 120 580 24 150-62 280-80 430-36v212H0z" fill="#10b981" opacity=".25"/>
+  <path d="M0 340c220-70 420-42 600-30 320 22 460-112 840-42v152H0z" fill="#a7f3d0" opacity=".18"/>
+  <g fill="#fff" opacity=".12"><circle cx="180" cy="120" r="54"/><circle cx="1080" cy="90" r="38"/><circle cx="1270" cy="170" r="76"/></g>
+</svg>
