@@ -1,8 +1,14 @@
 import React from 'react';
-import { Award, ShieldCheck, Globe, LockKeyhole } from 'lucide-react';
-import heroImage from '../../src/assets/images/hero_illustration_no_text.svg';
-import footerImage from '../../src/assets/images/footer_background.svg';
-import complianceImage from '../../src/assets/images/compliance_visual.svg';
+import { 
+  Award, ShieldCheck, Globe, LockKeyhole, 
+  Cloud, Layers, FileCheck, ShoppingBag, Compass, 
+  Hammer, HardHat, Recycle, Building, Scale, TrendingUp 
+} from 'lucide-react';
+
+// Use real people and environment photos instead of AI-generated illustrations
+const heroImage = 'https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=1600';
+const complianceImage = 'https://edgebuildings.com/wp-content/uploads/2022/04/edge-featured-landing-excellence-dfge.jpg';
+const footerImage = 'https://images.unsplash.com/photo-1518005020951-eccb494ad742?auto=format&fit=crop&q=80&w=1200';
 
 interface LandingViewProps {
   onRequestAccess: () => void;
@@ -207,22 +213,38 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
         @media (min-width: 900px) { .platform-grid { grid-template-columns: 1fr 1fr; } }
         .platform-modules { display: flex; flex-direction: column; gap: 16px; margin-top: 40px; }
         .module-card {
-          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
-          border-radius: 12px; padding: 20px 24px;
-          display: flex; align-items: flex-start; gap: 16px;
-          transition: background 0.2s, border-color 0.2s; cursor: pointer;
+          background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 14px; padding: 24px;
+          display: flex; align-items: flex-start; gap: 20px;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer;
+          position: relative; overflow: hidden;
         }
-        .module-card:hover { background: rgba(255,255,255,0.07); border-color: rgba(91,173,111,0.3); }
+        .module-card::before {
+          content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%;
+          background: transparent; transition: background-color 0.3s;
+        }
+        .module-card:hover {
+          background: rgba(255,255,255,0.05); border-color: rgba(91,173,111,0.25);
+          transform: translateX(4px);
+        }
+        .module-card:hover::before {
+          background: var(--lime);
+        }
         .module-icon {
-          width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;
-          font-size: 18px; flex-shrink: 0;
+          width: 44px; height: 44px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0; transition: all 0.3s;
         }
-        .mod-green { background: rgba(46,107,69,0.3); }
-        .mod-amber { background: rgba(212,130,10,0.25); }
-        .mod-blue { background: rgba(56,100,160,0.3); }
-        .mod-teal { background: rgba(20,130,120,0.25); }
-        .module-text h3 { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-        .module-text p { font-size: 13px; color: var(--concrete); line-height: 1.5; }
+        .module-card:hover .module-icon {
+          transform: scale(1.05);
+          box-shadow: 0 0 15px rgba(91,173,111,0.15);
+        }
+        .mod-green { background: rgba(91,173,111,0.1); color: var(--lime); border: 1px solid rgba(91,173,111,0.15); }
+        .mod-amber { background: rgba(245,184,74,0.1); color: var(--amber-light); border: 1px solid rgba(245,184,74,0.15); }
+        .mod-blue { background: rgba(130,170,223,0.1); color: #82AADF; border: 1px solid rgba(130,170,223,0.15); }
+        .mod-teal { background: rgba(110,205,224,0.1); color: #6ECDE0; border: 1px solid rgba(110,205,224,0.15); }
+        .mod-purple { background: rgba(180,142,224,0.1); color: #B48EE0; border: 1px solid rgba(180,142,224,0.15); }
+        .module-text h3 { font-size: 16px; font-weight: 600; color: var(--offwhite); margin-bottom: 6px; }
+        .module-text p { font-size: 13px; color: var(--concrete); line-height: 1.6; }
 
         .platform-visual {
           background: rgba(0,0,0,0.25); border: 1px solid rgba(255,255,255,0.08);
@@ -251,21 +273,46 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
         @media (min-width: 768px) { .waste-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1024px) { .waste-grid { grid-template-columns: repeat(3, 1fr); } }
         .waste-card {
-          border-radius: 14px; overflow: hidden; position: relative; min-height: 240px;
+          border-radius: 16px; overflow: hidden; position: relative; min-height: 250px;
           display: flex; flex-direction: column; justify-content: flex-end;
-          padding: 24px; cursor: pointer;
-          transition: transform 0.2s;
+          padding: 28px 24px; cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+          border: 1px solid rgba(255,255,255,0.05);
         }
-        .waste-card:hover { transform: translateY(-4px); }
-        .wc-concrete { background: linear-gradient(160deg, #2E3A2F 0%, #1A2E1C 100%); border: 1px solid rgba(91,173,111,0.2); }
-        .wc-metal { background: linear-gradient(160deg, #2A2E35 0%, #1A1E28 100%); border: 1px solid rgba(56,100,160,0.2); }
-        .wc-timber { background: linear-gradient(160deg, #38281A 0%, #26180A 100%); border: 1px solid rgba(212,130,10,0.2); }
-        .wc-hazmat { background: linear-gradient(160deg, #3A2020 0%, #261414 100%); border: 1px solid rgba(200,60,60,0.2); }
-        .wc-glass { background: linear-gradient(160deg, #1E2E38 0%, #14202A 100%); border: 1px solid rgba(56,160,180,0.2); }
-        .wc-mixed { background: linear-gradient(160deg, #2E2A36 0%, #1E1828 100%); border: 1px solid rgba(140,100,200,0.2); }
-        .wc-icon { font-size: 36px; margin-bottom: 16px; display: block; }
-        .wc-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
-        .wc-sub { font-size: 12px; color: var(--concrete); line-height: 1.4; }
+        .waste-card:hover { 
+          transform: translateY(-6px); 
+          box-shadow: 0 15px 30px rgba(0,0,0,0.3);
+          border-color: rgba(255,255,255,0.12);
+        }
+        .wc-concrete { background: linear-gradient(145deg, rgba(46,75,55,0.3) 0%, rgba(20,30,22,0.6) 100%); }
+        .wc-metal { background: linear-gradient(145deg, rgba(40,55,75,0.3) 0%, rgba(18,22,30,0.6) 100%); }
+        .wc-timber { background: linear-gradient(145deg, rgba(75,50,30,0.3) 0%, rgba(30,18,10,0.6) 100%); }
+        .wc-hazmat { background: linear-gradient(145deg, rgba(75,30,30,0.3) 0%, rgba(30,12,12,0.6) 100%); }
+        .wc-glass { background: linear-gradient(145deg, rgba(30,65,75,0.3) 0%, rgba(12,25,30,0.6) 100%); }
+        .wc-mixed { background: linear-gradient(145deg, rgba(55,40,75,0.3) 0%, rgba(22,15,30,0.6) 100%); }
+        
+        .waste-card:hover.wc-concrete { border-color: rgba(91,173,111,0.4); box-shadow: 0 12px 30px rgba(91,173,111,0.15); }
+        .waste-card:hover.wc-metal { border-color: rgba(130,170,223,0.4); box-shadow: 0 12px 30px rgba(130,170,223,0.15); }
+        .waste-card:hover.wc-timber { border-color: rgba(245,184,74,0.4); box-shadow: 0 12px 30px rgba(245,184,74,0.15); }
+        .waste-card:hover.wc-hazmat { border-color: rgba(200,60,60,0.4); box-shadow: 0 12px 30px rgba(200,60,60,0.15); }
+        .waste-card:hover.wc-glass { border-color: rgba(110,205,224,0.4); box-shadow: 0 12px 30px rgba(110,205,224,0.15); }
+        .waste-card:hover.wc-mixed { border-color: rgba(180,142,224,0.4); box-shadow: 0 12px 30px rgba(180,142,224,0.15); }
+
+        .wc-icon-wrap {
+          width: 48px; height: 48px; border-radius: 12px; display: flex; align-items: center; justify-content: center;
+          margin-bottom: 20px; transition: transform 0.3s;
+        }
+        .waste-card:hover .wc-icon-wrap { transform: scale(1.1) rotate(3deg); }
+        
+        .wc-concrete .wc-icon-wrap { background: rgba(91,173,111,0.15); color: var(--lime); }
+        .wc-metal .wc-icon-wrap { background: rgba(130,170,223,0.15); color: #82AADF; }
+        .wc-timber .wc-icon-wrap { background: rgba(245,184,74,0.15); color: var(--amber-light); }
+        .wc-hazmat .wc-icon-wrap { background: rgba(200,60,60,0.15); color: #E26B6B; }
+        .wc-glass .wc-icon-wrap { background: rgba(110,205,224,0.15); color: #6ECDE0; }
+        .wc-mixed .wc-icon-wrap { background: rgba(180,142,224,0.15); color: #B48EE0; }
+
+        .wc-title { font-size: 18px; font-weight: 700; color: var(--white); margin-bottom: 8px; }
+        .wc-sub { font-size: 13px; color: var(--concrete); line-height: 1.5; }
         .wc-tag {
           position: absolute; top: 20px; right: 20px;
           font-size: 10px; font-weight: 700; padding: 4px 10px;
@@ -314,14 +361,33 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
         @media (min-width: 768px) { .use-grid { grid-template-columns: repeat(2, 1fr); } }
         @media (min-width: 1024px) { .use-grid { grid-template-columns: repeat(4, 1fr); } }
         .use-card {
-          background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07);
-          border-radius: 14px; padding: 28px 20px; text-align: center;
-          transition: transform 0.2s, border-color 0.2s; cursor: pointer;
+          background: rgba(255,255,255,0.015); border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 16px; padding: 32px 24px; text-align: left;
+          transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer;
+          display: flex; flex-direction: column; gap: 16px;
+          backdrop-filter: blur(8px);
         }
-        .use-card:hover { transform: translateY(-4px); border-color: rgba(91,173,111,0.3); }
-        .use-icon { font-size: 32px; margin-bottom: 16px; display: block; }
-        .use-title { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
-        .use-desc { font-size: 12px; color: var(--concrete); line-height: 1.5; }
+        .use-card:hover { 
+          transform: translateY(-5px); 
+          border-color: rgba(91,173,111,0.3); 
+          background: rgba(255,255,255,0.035);
+          box-shadow: 0 12px 24px rgba(0,0,0,0.2);
+        }
+        .use-icon-wrap { 
+          width: 44px; height: 44px; border-radius: 10px; 
+          background: rgba(255,255,255,0.04); 
+          display: flex; align-items: center; justify-content: center; 
+          color: var(--lime); transition: all 0.3s;
+          border: 1px solid rgba(255,255,255,0.05);
+        }
+        .use-card:hover .use-icon-wrap {
+          background: rgba(91,173,111,0.15);
+          color: var(--lime);
+          border-color: rgba(91,173,111,0.25);
+          transform: scale(1.05);
+        }
+        .use-title { font-size: 16px; font-weight: 600; color: var(--offwhite); }
+        .use-desc { font-size: 13px; color: var(--concrete); line-height: 1.6; }
 
         /* ── TESTIMONIAL / IMPACT ── */
         .impact-section { background: var(--charcoal); }
@@ -367,6 +433,226 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
           cursor: pointer; transition: border-color 0.2s;
         }
         .cta-btn-ghost:hover { border-color: rgba(255,255,255,0.8); }
+
+        /* ── PARTNERS SECTION ── */
+        .partners-section {
+          background: #121314;
+          padding: 64px 48px;
+          border-top: 1px solid rgba(255,255,255,0.03);
+          border-bottom: 1px solid rgba(255,255,255,0.03);
+          text-align: center;
+          overflow: hidden;
+        }
+        .partners-eyebrow {
+          font-size: 11px;
+          letter-spacing: 0.2em;
+          text-transform: uppercase;
+          color: var(--sage);
+          opacity: 0.7;
+          margin-bottom: 32px;
+          font-weight: 600;
+        }
+        .marquee-container {
+          position: relative;
+          width: 100%;
+          overflow: hidden;
+          padding: 12px 0;
+        }
+        /* Mask overlay to fade out at edges */
+        .marquee-container::before,
+        .marquee-container::after {
+          content: "";
+          position: absolute;
+          top: 0;
+          bottom: 0;
+          width: 120px;
+          z-index: 2;
+          pointer-events: none;
+        }
+        .marquee-container::before {
+          left: 0;
+          background: linear-gradient(to right, #121314, transparent);
+        }
+        .marquee-container::after {
+          right: 0;
+          background: linear-gradient(to left, #121314, transparent);
+        }
+        .marquee-track {
+          display: flex;
+          gap: 60px;
+          width: max-content;
+          animation: marquee-scroll 40s linear infinite;
+        }
+        .marquee-track:hover {
+          animation-play-state: paused;
+        }
+        .partner-logo-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          color: var(--concrete);
+          opacity: 0.45;
+          transition: all 0.3s ease;
+          cursor: pointer;
+          white-space: nowrap;
+        }
+        .partner-logo-item:hover {
+          opacity: 1;
+          color: var(--lime);
+          transform: scale(1.03);
+        }
+        .partner-mark {
+          width: 28px;
+          height: 28px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-weight: 800;
+          font-size: 12px;
+          border: 1.5px solid currentColor;
+          border-radius: 6px;
+        }
+        .partner-name {
+          font-size: 13px;
+          font-weight: 700;
+          letter-spacing: 0.15em;
+          text-transform: uppercase;
+          font-family: 'Space Grotesk', sans-serif;
+        }
+        @keyframes marquee-scroll {
+          0% {
+            transform: translateX(0);
+          }
+          100% {
+            transform: translateX(-50%);
+          }
+        }
+
+        /* ── CASE STUDIES ── */
+        .cases-section {
+          background: #17191a;
+          padding: 96px 48px;
+          border-top: 1px solid rgba(255,255,255,0.05);
+          border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .cases-grid {
+          display: grid;
+          grid-template-columns: 1fr;
+          gap: 32px;
+          margin-top: 56px;
+        }
+        @media (min-width: 768px) {
+          .cases-grid {
+            grid-template-columns: repeat(2, 1fr);
+          }
+        }
+        @media (min-width: 1100px) {
+          .cases-grid {
+            grid-template-columns: repeat(3, 1fr);
+          }
+        }
+        .case-card {
+          background: rgba(255,255,255,0.015);
+          border: 1px solid rgba(255,255,255,0.05);
+          border-radius: 16px;
+          overflow: hidden;
+          transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+        }
+        .case-card:hover {
+          transform: translateY(-8px);
+          border-color: rgba(91,173,111,0.3);
+          background: rgba(255,255,255,0.03);
+          box-shadow: 0 20px 40px rgba(0,0,0,0.35);
+        }
+        .case-image-wrapper {
+          position: relative;
+          height: 200px;
+          overflow: hidden;
+        }
+        .case-image {
+          width: 100%;
+          height: 100%;
+          object-fit: cover;
+          transition: transform 0.6s ease;
+        }
+        .case-card:hover .case-image {
+          transform: scale(1.05);
+        }
+        .case-image-overlay {
+          position: absolute;
+          inset: 0;
+          background: linear-gradient(to top, rgba(23,25,26,0.95) 0%, rgba(23,25,26,0) 100%);
+        }
+        .case-location {
+          position: absolute;
+          bottom: 16px;
+          left: 20px;
+          font-size: 11px;
+          font-weight: 600;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+          color: var(--lime);
+          background: rgba(26, 60, 42, 0.85);
+          padding: 4px 10px;
+          border-radius: 4px;
+          backdrop-filter: blur(4px);
+          border: 1px solid rgba(91,173,111,0.25);
+        }
+        .case-content {
+          padding: 24px;
+          display: flex;
+          flex-direction: column;
+          flex: 1;
+        }
+        .case-meta {
+          font-size: 11px;
+          color: var(--sage);
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+          margin-bottom: 8px;
+          font-weight: 500;
+        }
+        .case-title {
+          font-size: 18px;
+          font-weight: 700;
+          color: var(--white);
+          margin-bottom: 12px;
+          line-height: 1.3;
+        }
+        .case-desc {
+          font-size: 13px;
+          color: var(--concrete);
+          line-height: 1.6;
+          margin-bottom: 24px;
+          flex: 1;
+        }
+        .case-stats-row {
+          display: grid;
+          grid-template-columns: 1fr 1fr;
+          gap: 12px;
+          padding-top: 16px;
+          border-top: 1px solid rgba(255,255,255,0.06);
+        }
+        .case-stat-box {
+          display: flex;
+          flex-direction: column;
+        }
+        .case-stat-num {
+          font-family: 'Space Mono', monospace;
+          font-size: 16px;
+          font-weight: 700;
+          color: var(--lime);
+        }
+        .case-stat-label {
+          font-size: 10px;
+          color: var(--sage);
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          margin-top: 2px;
+        }
 
         /* ── FOOTER ── */
         .landing-footer {
@@ -482,38 +768,38 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
             <div>
               <div className="section-eyebrow">The Platform</div>
               <h2 className="section-title">An intelligence layer built for construction waste</h2>
-              <p className="section-sub">From skip-level tracking to AI-powered manifests, CG WasteData gives project managers, EHS teams and sustainability officers a single source of truth.</p>
+              <p className="section-sub">From skip-level tracking to digital compliance manifests, CG WasteData gives project managers, EHS teams and sustainability officers a single source of truth.</p>
               <div className="platform-modules">
                 <div className="module-card">
-                  <div className="module-icon mod-green">☁️</div>
+                  <div className="module-icon mod-green"><Cloud size={20} /></div>
                   <div className="module-text">
                     <h3>CG Waste Intelligence Cloud</h3>
-                    <p>A centralized SaaS operating environment providing real-time waste data visibility, project monitoring dashboards, and AI-driven reporting.</p>
+                    <p>A centralized SaaS operating environment providing real-time waste data visibility, project monitoring dashboards, and automated smart reporting.</p>
                   </div>
                 </div>
                 <div className="module-card">
-                  <div className="module-icon mod-amber">📟</div>
+                  <div className="module-icon mod-amber"><Layers size={20} /></div>
                   <div className="module-text">
                     <h3>C&D Waste Digital Twin Monitoring</h3>
                     <p>Digital modelling for tracking waste flows, project performance, and recovery opportunities across full asset lifecycles.</p>
                   </div>
                 </div>
                 <div className="module-card">
-                  <div className="module-icon mod-blue">📋</div>
+                  <div className="module-icon mod-blue"><FileCheck size={20} /></div>
                   <div className="module-text">
                     <h3>Green Compliance Management Suite</h3>
                     <p>Integrated tools supporting environmental regulations, circular economy reporting, ESG disclosures, and green building standards.</p>
                   </div>
                 </div>
                 <div className="module-card">
-                  <div className="module-icon mod-teal">🔄</div>
+                  <div className="module-icon mod-teal"><ShoppingBag size={20} /></div>
                   <div className="module-text">
                     <h3>Construction Waste Marketplace</h3>
                     <p>A digital exchange connecting waste generators, recyclers, processors, and buyers through intelligent matching.</p>
                   </div>
                 </div>
                 <div className="module-card">
-                  <div className="module-icon" style={{background: 'rgba(212,130,10,0.25)'}}>🌿</div>
+                  <div className="module-icon mod-purple"><Compass size={20} /></div>
                   <div className="module-text">
                     <h3>Edge Building Design Consultancy</h3>
                     <p>Green building advisory, resource-efficient design intelligence, and ESG certification readiness support.</p>
@@ -525,27 +811,27 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
             <div className="platform-visual">
               <div className="pv-header"><div className="pv-dot" /> Live data pipeline</div>
               <div className="flow-node">
-                <span className="flow-node-label">📡 Weighbridge IoT sensors</span>
+                <span className="flow-node-label">Weighbridge IoT sensors</span>
                 <span className="flow-node-tag tag-live">LIVE</span>
               </div>
               <div className="flow-arrow">↓</div>
               <div className="flow-node">
-                <span className="flow-node-label">🧠 AI classification engine</span>
-                <span className="flow-node-tag tag-ai">AI</span>
+                <span className="flow-node-label">Classification engine</span>
+                <span className="flow-node-tag tag-ai">SYSTEM</span>
               </div>
               <div className="flow-arrow">↓</div>
               <div className="flow-node">
-                <span className="flow-node-label">📄 Manifest auto-generation</span>
+                <span className="flow-node-label">Manifest auto-generation</span>
                 <span className="flow-node-tag tag-live">AUTO</span>
               </div>
               <div className="flow-arrow">↓</div>
               <div className="flow-node">
-                <span className="flow-node-label">🏛️ Regulator & auditor API</span>
+                <span className="flow-node-label">Regulator & auditor API</span>
                 <span className="flow-node-tag tag-int">INT.</span>
               </div>
               <div className="flow-arrow">↓</div>
               <div className="flow-node">
-                <span className="flow-node-label">📈 Client intelligence dashboard</span>
+                <span className="flow-node-label">Client intelligence dashboard</span>
                 <span className="flow-node-tag tag-ai">REPORT</span>
               </div>
               <div style={{marginTop: '20px', background: 'rgba(91,173,111,0.1)', border: '1px solid rgba(91,173,111,0.2)', borderRadius: '8px', padding: '14px 16px'}}>
@@ -572,39 +858,39 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
           <div className="waste-grid">
             <div className="waste-card wc-concrete">
               <span className="wc-tag" style={{background: 'rgba(91,173,111,0.2)', color: 'var(--lime)'}}>RECYC. 88%</span>
-              <span className="wc-icon">🪨</span>
+              <div className="wc-icon-wrap"><Layers size={24} /></div>
               <div className="wc-title">Concrete & Masonry</div>
               <div className="wc-sub">Crushed aggregate, block, brick — tracked to licensed recyclers</div>
             </div>
             <div className="waste-card wc-metal">
               <span className="wc-tag" style={{background: 'rgba(56,100,160,0.25)', color: '#82AADF'}}>RECYC. 94%</span>
-              <span className="wc-icon">⚙️</span>
+              <div className="wc-icon-wrap"><Hammer size={24} /></div>
               <div className="wc-title">Steel & Metal</div>
               <div className="wc-sub">Rebar, structural steel, copper — high-value circular chain</div>
             </div>
             <div className="waste-card wc-timber">
               <span className="wc-tag" style={{background: 'rgba(212,130,10,0.2)', color: 'var(--amber-light)'}}>RECYC. 61%</span>
-              <span className="wc-icon">🪵</span>
+              <div className="wc-icon-wrap"><Building size={24} /></div>
               <div className="wc-title">Timber & Boarding</div>
               <div className="wc-sub">Formwork, scaffolding boards, engineered timber classification</div>
             </div>
             <div className="waste-card wc-hazmat">
               <span className="wc-tag" style={{background: 'rgba(200,60,60,0.2)', color: '#E26B6B'}}>CONTROLLED</span>
-              <span className="wc-icon">⚠️</span>
+              <div className="wc-icon-wrap"><LockKeyhole size={24} /></div>
               <div className="wc-title">Hazardous Materials</div>
               <div className="wc-sub">Asbestos, lead paint, PCBs — compliant licensed disposal chain</div>
             </div>
             <div className="waste-card wc-glass">
               <span className="wc-tag" style={{background: 'rgba(56,160,180,0.2)', color: '#6ECDE0'}}>RECYC. 52%</span>
-              <span className="wc-icon">🪟</span>
+              <div className="wc-icon-wrap"><Compass size={24} /></div>
               <div className="wc-title">Glass & Glazing</div>
               <div className="wc-sub">Float glass, laminated panels, curtain wall components</div>
             </div>
             <div className="waste-card wc-mixed">
-              <span className="wc-tag" style={{background: 'rgba(140,100,200,0.2)', color: '#B48EE0'}}>AI SORTED</span>
-              <span className="wc-icon">🔍</span>
+              <span className="wc-tag" style={{background: 'rgba(140,100,200,0.2)', color: '#B48EE0'}}>AUTOSORTED</span>
+              <div className="wc-icon-wrap"><Recycle size={24} /></div>
               <div className="wc-title">Mixed & Unclassified</div>
-              <div className="wc-sub">AI vision sorting on mixed skips — reclassified in under 4 seconds</div>
+              <div className="wc-sub">Automated vision sorting on mixed skips — reclassified in under 4 seconds</div>
             </div>
           </div>
         </section>
@@ -680,6 +966,371 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
           </div>
         </section>
 
+        {/* CASE STUDIES SECTION */}
+        <section className="cases-section" id="case-studies">
+          <div style={{ maxWidth: '1200px', margin: '0 auto' }}>
+            <div className="section-eyebrow">Real-World Performance</div>
+            <h2 className="section-title">Case Studies Across Africa & Globally</h2>
+            <p className="section-sub" style={{ marginBottom: '40px' }}>
+              Discover how our enterprise clients utilize CG WasteData to streamline materials recovery, reduce hauling overheads, automate compliance reporting, and achieve international green build certifications.
+            </p>
+            
+            <div className="cases-grid">
+              {/* Card 1 */}
+              <div className="case-card">
+                <div className="case-image-wrapper">
+                  <img src="https://images.unsplash.com/photo-1577495508048-b635879837f1?auto=format&fit=crop&q=80&w=800" alt="The Leonardo" className="case-image" />
+                  <div className="case-image-overlay" />
+                  <span className="case-location">Sandton, South Africa</span>
+                </div>
+                <div className="case-content">
+                  <div className="case-meta">Sovereign Supertall Landmark</div>
+                  <h3 className="case-title">The Leonardo Development</h3>
+                  <p className="case-desc">
+                    Faced with high-density urban site limitations during the 55-story tower execution, our systems tracked all concrete and timber workflows, routing rubble directly to nearby regional aggregators.
+                  </p>
+                  <div className="case-stats-row">
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">89%</span>
+                      <span className="case-stat-label">Diverted from Landfill</span>
+                    </div>
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">342 t</span>
+                      <span className="case-stat-label">CO2e Saved</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2 */}
+              <div className="case-card">
+                <div className="case-image-wrapper">
+                  <img src="https://images.unsplash.com/photo-1548345680-f5475ea5df84?auto=format&fit=crop&q=80&w=800" alt="Eko Atlantic Marina" className="case-image" />
+                  <div className="case-image-overlay" />
+                  <span className="case-location">Lagos, Nigeria</span>
+                </div>
+                <div className="case-content">
+                  <div className="case-meta">Coastal Smart City Project</div>
+                  <h3 className="case-title">Eko Atlantic Marina District</h3>
+                  <p className="case-desc">
+                    Managing and safeguarding massive marine reclamation works. Outfitted trucks with IoT weighbridge sensors and integrated manifests to ensure absolute circularity and heavy steel recycling.
+                  </p>
+                  <div className="case-stats-row">
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">100%</span>
+                      <span className="case-stat-label">Steel Re-smelted</span>
+                    </div>
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">1,150 t</span>
+                      <span className="case-stat-label">CO2e Saved</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 3 */}
+              <div className="case-card">
+                <div className="case-image-wrapper">
+                  <img src="https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&q=80&w=800" alt="New Administrative Capital" className="case-image" />
+                  <div className="case-image-overlay" />
+                  <span className="case-location">Cairo, Egypt</span>
+                </div>
+                <div className="case-content">
+                  <div className="case-meta">Megacity Infrastructure Hub</div>
+                  <h3 className="case-title">New Administrative Capital</h3>
+                  <p className="case-desc">
+                    Optimized the sorting of masonry waste across sprawling districts using our digital twin monitoring system, enabling regional factories to process brick rubble directly into building blocks.
+                  </p>
+                  <div className="case-stats-row">
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">45k Tonnes</span>
+                      <span className="case-stat-label">Material Repurposed</span>
+                    </div>
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">4,890 t</span>
+                      <span className="case-stat-label">CO2e Saved</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 4 */}
+              <div className="case-card">
+                <div className="case-image-wrapper">
+                  <img src="https://images.unsplash.com/photo-1541888946425-d81bb19240f5?auto=format&fit=crop&q=80&w=800" alt="Claridge Hotel Extension" className="case-image" />
+                  <div className="case-image-overlay" />
+                  <span className="case-location">London, United Kingdom</span>
+                </div>
+                <div className="case-content">
+                  <div className="case-meta">Subterranean Historic Renovation</div>
+                  <h3 className="case-title">Claridge's Hotel Extension</h3>
+                  <p className="case-desc">
+                    Navigated complex inner-city historic preservation rules during sub-grade excavation. CG WasteData tracked and documented hazardous soils, preserving BREEAM Outstanding standards.
+                  </p>
+                  <div className="case-stats-row">
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">98%</span>
+                      <span className="case-stat-label">Recycling Efficiency</span>
+                    </div>
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">180 t</span>
+                      <span className="case-stat-label">Carbon Abated</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 5 */}
+              <div className="case-card">
+                <div className="case-image-wrapper">
+                  <img src="https://images.unsplash.com/photo-1507089947368-19c1da9775ae?auto=format&fit=crop&q=80&w=800" alt="Kigali Green City" className="case-image" />
+                  <div className="case-image-overlay" />
+                  <span className="case-location">Kigali, Rwanda</span>
+                </div>
+                <div className="case-content">
+                  <div className="case-meta">Eco-District Housing Development</div>
+                  <h3 className="case-title">Kigali Green City Pilot</h3>
+                  <p className="case-desc">
+                    Empowered high-efficiency residential development. CG WasteData tracked raw soil brick offcuts and locally-sourced clay waste to optimize pre-fabrication loops and eliminate haulage.
+                  </p>
+                  <div className="case-stats-row">
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">94%</span>
+                      <span className="case-stat-label">Local Recovery</span>
+                    </div>
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">BREEAM</span>
+                      <span className="case-stat-label">Pre-certified</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 6 */}
+              <div className="case-card">
+                <div className="case-image-wrapper">
+                  <img src="https://images.unsplash.com/photo-1578575437130-527eed3abbec?auto=format&fit=crop&q=80&w=800" alt="Mombasa Port Expansion" className="case-image" />
+                  <div className="case-image-overlay" />
+                  <span className="case-location">Mombasa, Kenya</span>
+                </div>
+                <div className="case-content">
+                  <div className="case-meta">Heavy Civil Infrastructure</div>
+                  <h3 className="case-title">Mombasa Port Modernization</h3>
+                  <p className="case-desc">
+                    Managed subsea dredging debris and heavy wharf pylon rubble. Monitored real-time water quality limits and logistics to keep port construction within strict marine regulatory requirements.
+                  </p>
+                  <div className="case-stats-row">
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">12k t</span>
+                      <span className="case-stat-label">Pylon Rubble Repurposed</span>
+                    </div>
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">Marine</span>
+                      <span className="case-stat-label">Compliant Flow</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 7 */}
+              <div className="case-card">
+                <div className="case-image-wrapper">
+                  <img src="https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&q=80&w=800" alt="The Red Sea Project" className="case-image" />
+                  <div className="case-image-overlay" />
+                  <span className="case-location">Tabuk, Saudi Arabia</span>
+                </div>
+                <div className="case-content">
+                  <div className="case-meta">Ultra-Luxury Eco-Tourism Gateway</div>
+                  <h3 className="case-title">The Red Sea Giga-Project</h3>
+                  <p className="case-desc">
+                    Ensured compliance with strict zero-waste-to-landfill criteria. Logged all structural packaging, timber pallets, and structural steel offcuts via digital twin workflows for direct supplier buyback.
+                  </p>
+                  <div className="case-stats-row">
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">100%</span>
+                      <span className="case-stat-label">Zero-Landfill Compliant</span>
+                    </div>
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">2,800 t</span>
+                      <span className="case-stat-label">Carbon Avoided</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 8 */}
+              <div className="case-card">
+                <div className="case-image-wrapper">
+                  <img src="https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80&w=800" alt="Silicon Valley Campus" className="case-image" />
+                  <div className="case-image-overlay" />
+                  <span className="case-location">California, USA</span>
+                </div>
+                <div className="case-content">
+                  <div className="case-meta">Commercial Office Retrofit</div>
+                  <h3 className="case-title">Silicon Valley Tech HQ</h3>
+                  <p className="case-desc">
+                    Digitized structural demolition across a multi-acre tech campus. Identified high-value drywall, timber beams, and copper networks, proving carbon reduction metrics for local authorities.
+                  </p>
+                  <div className="case-stats-row">
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">82%</span>
+                      <span className="case-stat-label">Drywall Recycled</span>
+                    </div>
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">LEED</span>
+                      <span className="case-stat-label">Platinum Certified</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 9 */}
+              <div className="case-card">
+                <div className="case-image-wrapper">
+                  <img src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&q=80&w=800" alt="Casablanca Finance Tower" className="case-image" />
+                  <div className="case-image-overlay" />
+                  <span className="case-location">Casablanca, Morocco</span>
+                </div>
+                <div className="case-content">
+                  <div className="case-meta">Financial District Skyscraper</div>
+                  <h3 className="case-title">Casablanca Finance City Tower</h3>
+                  <p className="case-desc">
+                    Streamlined specialized material classification. Leveraged our material database and manifest suite to isolate curtain wall glass, high-grade aluminum, and copper conduits during high-rise commissioning.
+                  </p>
+                  <div className="case-stats-row">
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">91%</span>
+                      <span className="case-stat-label">Aluminum Recovered</span>
+                    </div>
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">ISO 50001</span>
+                      <span className="case-stat-label">Aligned Metrics</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 10 */}
+              <div className="case-card">
+                <div className="case-image-wrapper">
+                  <img src="https://images.unsplash.com/photo-1590069261209-f8e9b8642343?auto=format&fit=crop&q=80&w=800" alt="GERD Infrastructure" className="case-image" />
+                  <div className="case-image-overlay" />
+                  <span className="case-location">Guba, Ethiopia</span>
+                </div>
+                <div className="case-content">
+                  <div className="case-meta">Hydropower Support Infrastructure</div>
+                  <h3 className="case-title">GERD Support Works</h3>
+                  <p className="case-desc">
+                    Managed high-volume rock excavation and aggregate processing. Outfitted heavy crusher machinery with tracking tools, utilizing rock waste for retaining walls and local sub-base layers.
+                  </p>
+                  <div className="case-stats-row">
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">120k m³</span>
+                      <span className="case-stat-label">Rock Re-engineered</span>
+                    </div>
+                    <div className="case-stat-box">
+                      <span className="case-stat-num">Zero</span>
+                      <span className="case-stat-label">Haulage Waste</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* TRUSTED PARTNERS (ANIMATED MARQUEE) */}
+        <section className="partners-section">
+          <div className="partners-eyebrow">Trusted Across Pan-African & Global Enterprise Projects</div>
+          <div className="marquee-container">
+            <div className="marquee-track">
+              {/* Copy 1 */}
+              <div className="partner-logo-item">
+                <div className="partner-mark">D</div>
+                <span className="partner-name">Dangote</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">AC</div>
+                <span className="partner-name">Arab Contractors</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">JB</div>
+                <span className="partner-name">Julius Berger</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">W</div>
+                <span className="partner-name">WBHO</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">SS</div>
+                <span className="partner-name">Stefanutti Stocks</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">G5</div>
+                <span className="partner-name">Group Five</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">OC</div>
+                <span className="partner-name">Orascom</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">BC</div>
+                <span className="partner-name">Bouygues</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">LH</div>
+                <span className="partner-name">LafargeHolcim</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">AV</div>
+                <span className="partner-name">Aveng</span>
+              </div>
+
+              {/* Copy 2 (Seamless loop duplicate) */}
+              <div className="partner-logo-item">
+                <div className="partner-mark">D</div>
+                <span className="partner-name">Dangote</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">AC</div>
+                <span className="partner-name">Arab Contractors</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">JB</div>
+                <span className="partner-name">Julius Berger</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">W</div>
+                <span className="partner-name">WBHO</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">SS</div>
+                <span className="partner-name">Stefanutti Stocks</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">G5</div>
+                <span className="partner-name">Group Five</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">OC</div>
+                <span className="partner-name">Orascom</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">BC</div>
+                <span className="partner-name">Bouygues</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">LH</div>
+                <span className="partner-name">LafargeHolcim</span>
+              </div>
+              <div className="partner-logo-item">
+                <div className="partner-mark">AV</div>
+                <span className="partner-name">Aveng</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
         {/* USE CASES */}
         <section className="landing-section use-section" id="analytics">
           <div style={{textAlign: 'center'}}>
@@ -689,32 +1340,32 @@ export const LandingView: React.FC<LandingViewProps> = ({ onRequestAccess }) => 
           </div>
           <div className="use-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))' }}>
             <div className="use-card">
-              <span className="use-icon">📐</span>
+              <div className="use-icon-wrap"><Compass size={22} /></div>
               <div className="use-title">Architects & Designers</div>
               <div className="use-desc">Supporting sustainable building planning and waste-conscious design.</div>
             </div>
             <div className="use-card">
-              <span className="use-icon">👷</span>
+              <div className="use-icon-wrap"><HardHat size={22} /></div>
               <div className="use-title">Construction & Demolition Firms</div>
               <div className="use-desc">Driving operational efficiency, compliance, and material recovery.</div>
             </div>
             <div className="use-card">
-              <span className="use-icon">♻️</span>
+              <div className="use-icon-wrap"><Recycle size={22} /></div>
               <div className="use-title">Recycling & Recovery Companies</div>
               <div className="use-desc">Unlocking supply intelligence and marketplace opportunities.</div>
             </div>
             <div className="use-card">
-              <span className="use-icon">🏢</span>
+              <div className="use-icon-wrap"><Building size={22} /></div>
               <div className="use-title">Property Developers</div>
               <div className="use-desc">Improving project sustainability and reducing waste costs.</div>
             </div>
             <div className="use-card">
-              <span className="use-icon">⚖️</span>
+              <div className="use-icon-wrap"><Scale size={22} /></div>
               <div className="use-title">Government & Regulators</div>
               <div className="use-desc">Enabling digital oversight, reporting, and environmental governance.</div>
             </div>
             <div className="use-card">
-              <span className="use-icon">📈</span>
+              <div className="use-icon-wrap"><TrendingUp size={22} /></div>
               <div className="use-title">Infrastructure Investors & Green Funds</div>
               <div className="use-desc">Providing sustainability intelligence for responsible investment.</div>
             </div>

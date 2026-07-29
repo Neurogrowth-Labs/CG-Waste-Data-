@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { Scale, FileCheck, CheckCircle2, AlertCircle, FileText, Download, ChevronRight, Activity, Lock } from 'lucide-react';
+import { Scale, FileCheck, CheckCircle2, AlertCircle, FileText, Download, ChevronRight, Activity, Lock, BarChart3 } from 'lucide-react';
 import { User } from '../types';
+import ReportingEngine from './ReportingEngine';
 
 interface ComplianceEngineProps {
   user?: User;
 }
 
 export default function ComplianceEngine({ user }: ComplianceEngineProps) {
-  const [activeTab, setActiveTab] = useState<'status' | 'reports'>('status');
+  const [activeTab, setActiveTab] = useState<'status' | 'reports'>('reports');
 
   // RBAC checks for NEMA reporting features
   const isAuthorizedManager = user?.role === 'admin' || user?.role === 'manager';
@@ -16,12 +17,21 @@ export default function ComplianceEngine({ user }: ComplianceEngineProps) {
     <div className="h-full flex flex-col space-y-6">
       <div className="flex justify-between items-end">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Compliance Engine</h2>
-          <p className="text-slate-500">Automated checks, reporting, and permit workflows aligned with DFFE & NEMA.</p>
+          <h2 className="text-2xl font-bold text-slate-800">Compliance & Enterprise Reporting Engine</h2>
+          <p className="text-slate-500">Automated checks, BI analytics, JSON template generation, and permit workflows aligned with DFFE & NEMA.</p>
         </div>
       </div>
 
       <div className="flex border-b border-slate-200">
+        <button
+          onClick={() => setActiveTab('reports')}
+          className={`px-6 py-3 border-b-2 font-medium text-sm transition-colors ${
+            activeTab === 'reports' ? 'border-[#0B8F6C] text-[#0B8F6C]' : 'border-transparent text-slate-500 hover:text-slate-700'
+          }`}
+        >
+          <BarChart3 className="w-4 h-4 inline mr-2" />
+          Reporting Studio & BI Canvas
+        </button>
         <button
           onClick={() => setActiveTab('status')}
           className={`px-6 py-3 border-b-2 font-medium text-sm transition-colors ${
@@ -29,21 +39,14 @@ export default function ComplianceEngine({ user }: ComplianceEngineProps) {
           }`}
         >
           <Scale className="w-4 h-4 inline mr-2" />
-          Regulatory Health
-        </button>
-        <button
-          onClick={() => setActiveTab('reports')}
-          className={`px-6 py-3 border-b-2 font-medium text-sm transition-colors ${
-            activeTab === 'reports' ? 'border-[#0B8F6C] text-[#0B8F6C]' : 'border-transparent text-slate-500 hover:text-slate-700'
-          }`}
-        >
-          <FileText className="w-4 h-4 inline mr-2" />
-          Automated Reporting
+          Regulatory Health & Permits
         </button>
       </div>
 
       <div className="flex-1 overflow-y-auto">
-        {activeTab === 'status' ? (
+        {activeTab === 'reports' ? (
+          <ReportingEngine user={user} />
+        ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {[
@@ -106,59 +109,9 @@ export default function ComplianceEngine({ user }: ComplianceEngineProps) {
                </div>
             </div>
           </div>
-        ) : (
-           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 relative">
-              {!isAuthorizedManager ? (
-                 <div className="absolute inset-0 z-10 bg-slate-50/80 backdrop-blur-sm rounded-xl flex items-center justify-center border border-slate-200">
-                    <div className="text-center max-w-md bg-white p-8 rounded-xl shadow-lg border border-slate-200">
-                       <div className="w-16 h-16 bg-red-100 text-red-600 rounded-full flex flex-col items-center justify-center mx-auto mb-4">
-                         <Lock className="w-8 h-8" />
-                       </div>
-                       <h3 className="text-xl font-bold text-slate-800 mb-2">Access Restricted</h3>
-                       <p className="text-sm text-slate-600">
-                          Your current role ({user?.role || 'user'}) does not have permissions to execute automated NEMA reporting APIs. 
-                          Please contact a Platform Administrator or Environmental Director to approve submissions.
-                       </p>
-                       <button className="mt-6 w-full py-2 bg-slate-900 text-white rounded-lg font-medium hover:bg-slate-800">
-                         Request Access Elevation
-                       </button>
-                    </div>
-                 </div>
-              ) : null}
-              
-              <div className={`space-y-4 ${!isAuthorizedManager ? 'opacity-50 pointer-events-none' : ''}`}>
-                <h3 className="font-bold text-slate-800 border-b border-slate-200 pb-2">Generate Reports</h3>
-                {[
-                  { name: 'ESG Quarterly Disclosures', desc: 'Full emissions & waste diversion rates.' },
-                  { name: 'Comprehensive Waste Audit', desc: 'Site-by-site material breakdown.' },
-                  { name: 'Carbon Footprint Analysis', desc: 'Scope 3 transport emissions mapped.' }
-                ].map((rep, i) => (
-                  <div key={i} className="flex items-center justify-between p-4 bg-white rounded-xl border border-slate-200 hover:border-slate-300 transition-colors shadow-sm group">
-                     <div>
-                        <p className="font-semibold text-slate-800 text-sm">{rep.name}</p>
-                        <p className="text-xs text-slate-500 mt-0.5">{rep.desc}</p>
-                     </div>
-                     <button className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors">
-                        <Download className="w-5 h-5" />
-                     </button>
-                  </div>
-                ))}
-              </div>
-              <div className={`bg-slate-900 rounded-xl p-6 text-white shadow-lg relative overflow-hidden flex flex-col justify-center border border-slate-800 ${!isAuthorizedManager ? 'opacity-50 pointer-events-none' : ''}`}>
-                 <div className="absolute -right-10 -top-10 w-40 h-40 bg-emerald-500/20 rounded-full blur-3xl"></div>
-                 <Activity className="w-8 h-8 text-emerald-400 mb-4" />
-                 <h3 className="text-xl font-bold mb-2">Live API Integration Active</h3>
-                 <p className="text-slate-400 text-sm mb-6">Your NEMA compliance data is currently syncing directly to local regulatory endpoints securely.</p>
-                 <div className="bg-black/40 rounded-lg p-4 font-mono text-xs text-emerald-400">
-                    <div>&gt; POST /api/v1/compliance/nema-sync</div>
-                    <div>&gt; Payload verified (Auth context: {user?.role})</div>
-                    <div>&gt; Checksum: 0x8F9B2A...</div>
-                    <div className="text-slate-500 mt-2">// Next automated sync in 12hrs</div>
-                 </div>
-              </div>
-           </div>
         )}
       </div>
     </div>
   );
 }
+

@@ -4,7 +4,6 @@ import {
   Building2, HardHat, Recycle, Truck, Globe, Shield, UserCog, LogOut, Code, AlertTriangle, Blocks
 } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
-import { usePlatformMetrics } from '../lib/platformData';
 
 import SiteManagerView from './views/SiteManagerView';
 import TransporterView from './views/TransporterView';
@@ -21,7 +20,6 @@ interface DashboardProps {
 
 const Dashboard: React.FC<DashboardProps> = ({ initialRole = 'manager' }) => {
   const role = initialRole;
-  const { metrics, isLoading, isError } = usePlatformMetrics();
 
   const handleLogout = async () => {
     try {
@@ -100,29 +98,11 @@ const Dashboard: React.FC<DashboardProps> = ({ initialRole = 'manager' }) => {
         </div>
       </div>
 
-      <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm mb-6 max-w-5xl">
-         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-start">
-               <AlertTriangle className={`w-5 h-5 mr-3 shrink-0 mt-0.5 ${isError ? 'text-amber-500' : 'text-emerald-500'}`} />
-               <div>
-                  <h4 className="text-sm font-bold text-slate-900">Cross-role data synchronization</h4>
-                  <p className="text-xs text-slate-600 mt-1">All role dashboards read from the shared waste log stream. Empty states now show zero until production data is available instead of mock metrics.</p>
-               </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3 text-center">
-               <div className="bg-slate-50 rounded-lg px-3 py-2">
-                  <p className="text-[10px] uppercase text-slate-500 font-bold">Manifests</p>
-                  <p className="font-data font-bold text-slate-900">{isLoading ? '...' : metrics.activeManifests}</p>
-               </div>
-               <div className="bg-slate-50 rounded-lg px-3 py-2">
-                  <p className="text-[10px] uppercase text-slate-500 font-bold">Waste</p>
-                  <p className="font-data font-bold text-slate-900">{isLoading ? '...' : `${metrics.totalWaste.toFixed(1)}t`}</p>
-               </div>
-               <div className="bg-slate-50 rounded-lg px-3 py-2">
-                  <p className="text-[10px] uppercase text-slate-500 font-bold">Diversion</p>
-                  <p className="font-data font-bold text-slate-900">{isLoading ? '...' : `${metrics.diversionRate.toFixed(0)}%`}</p>
-               </div>
-            </div>
+      <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl flex items-start shadow-sm mb-6 max-w-4xl">
+         <AlertTriangle className="w-5 h-5 text-amber-500 mr-3 shrink-0 mt-0.5" />
+         <div>
+            <h4 className="text-sm font-bold text-amber-900">Interaction & Workflow Redirects</h4>
+            <p className="text-xs text-amber-800 mt-1">This role view has been upgraded with deep-linked multi-step tooling. Look for action buttons inside the operational cards to trigger flows.</p>
          </div>
       </div>
 

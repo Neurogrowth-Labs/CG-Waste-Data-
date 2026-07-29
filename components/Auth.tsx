@@ -79,11 +79,32 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
+        options: {
+          redirectTo: window.location.origin,
+        }
       });
       if (error) throw error;
     } catch (err: any) {
       console.error(err);
       setError(err.message || 'Google login failed');
+      setLoading(false);
+    }
+  };
+
+  const handleGitHubLogin = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'github',
+        options: {
+          redirectTo: window.location.origin,
+        }
+      });
+      if (error) throw error;
+    } catch (err: any) {
+      console.error(err);
+      setError(err.message || 'GitHub login failed. Please verify GitHub provider is enabled in your Supabase Auth settings.');
       setLoading(false);
     }
   };
@@ -204,7 +225,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
         <div className="relative z-10 flex flex-col p-10 xl:p-14 min-h-full">
           
           {/* Brand Logo */}
-          <div className="flex items-center space-x-3 mb-10 shrink-0">
+          <div className="flex items-center space-x-3 mb-4 shrink-0">
             <div className="w-10 h-10 bg-gradient-to-br from-[#00A76F] to-[#00C2A8] rounded-xl flex items-center justify-center shadow-lg shadow-[#00A76F]/20">
                <Building2 className="w-6 h-6 text-white" />
             </div>
@@ -212,6 +233,15 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                <span className="block text-xl font-extrabold tracking-tight text-white leading-none">CG WASTE DATA</span>
                <span className="block text-[10px] font-medium text-emerald-200/80 tracking-widest uppercase mt-1">Enterprise Construction Intelligence</span>
             </div>
+          </div>
+
+          {/* Compliance & Security Badges */}
+          <div className="flex items-center space-x-3 text-[10px] sm:text-xs font-medium text-emerald-100/80 uppercase tracking-widest mb-8 shrink-0 bg-white/5 backdrop-blur-md px-3.5 py-2 rounded-lg border border-white/10 w-fit">
+             <span className="flex items-center"><ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-[#00C2A8]" /> ISO 27001</span>
+             <span className="w-1 h-1 bg-emerald-500/50 rounded-full" />
+             <span className="flex items-center"><Lock className="w-3.5 h-3.5 mr-1.5 text-[#00C2A8]" /> SOC 2 Type II</span>
+             <span className="w-1 h-1 bg-emerald-500/50 rounded-full" />
+             <span className="flex items-center"><Globe className="w-3.5 h-3.5 mr-1.5 text-[#00C2A8]" /> LEED Integration</span>
           </div>
 
           {/* Hero Text */}
@@ -226,49 +256,49 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           </div>
 
           {/* Feature Cards */}
-          <div className="space-y-4 mb-12 flex-1">
+          <div className="space-y-2.5 mb-8 flex-1">
              {/* Feature 1 */}
-             <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex items-start space-x-4 hover:bg-white/10 transition-all hover:-translate-y-0.5">
-                <div className="p-3 bg-[#00A76F]/20 rounded-xl text-[#00C2A8] shrink-0">
-                   <Recycle className="w-6 h-6" />
+             <div className="bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-xl flex items-start space-x-3 hover:bg-white/10 transition-all hover:-translate-y-0.5">
+                <div className="p-2 bg-[#00A76F]/20 rounded-lg text-[#00C2A8] shrink-0">
+                   <Recycle className="w-4 h-4" />
                 </div>
                 <div>
-                   <h3 className="font-bold text-white text-lg mb-1.5">Building Demolition Waste Management</h3>
-                   <div className="flex flex-wrap gap-2 text-xs text-emerald-100/70">
-                     <span className="px-2 py-1 bg-white/5 rounded-md">Waste tracking</span>
-                     <span className="px-2 py-1 bg-white/5 rounded-md">Material recovery</span>
-                     <span className="px-2 py-1 bg-white/5 rounded-md">Recycling optimization</span>
-                     <span className="px-2 py-1 bg-white/5 rounded-md">Carbon reduction</span>
+                   <h3 className="font-bold text-white text-sm mb-1">Building Demolition Waste Management</h3>
+                   <div className="flex flex-wrap gap-1.5 text-[11px] text-emerald-100/70">
+                     <span className="px-2 py-0.5 bg-white/5 rounded">Waste tracking</span>
+                     <span className="px-2 py-0.5 bg-white/5 rounded">Material recovery</span>
+                     <span className="px-2 py-0.5 bg-white/5 rounded">Recycling optimization</span>
+                     <span className="px-2 py-0.5 bg-white/5 rounded">Carbon reduction</span>
                    </div>
                 </div>
              </div>
 
              {/* Feature 2 */}
-             <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex items-start space-x-4 hover:bg-white/10 transition-all hover:-translate-y-0.5">
-                <div className="p-3 bg-[#00A76F]/20 rounded-xl text-[#00C2A8] shrink-0">
-                   <Leaf className="w-6 h-6" />
+             <div className="bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-xl flex items-start space-x-3 hover:bg-white/10 transition-all hover:-translate-y-0.5">
+                <div className="p-2 bg-[#00A76F]/20 rounded-lg text-[#00C2A8] shrink-0">
+                   <Leaf className="w-4 h-4" />
                 </div>
                 <div>
-                   <h3 className="font-bold text-white text-lg mb-1.5">Green Building Design</h3>
-                   <div className="flex flex-wrap gap-2 text-xs text-emerald-100/70">
-                     <span className="px-2 py-1 bg-white/5 rounded-md">Sustainable design insights</span>
-                     <span className="px-2 py-1 bg-white/5 rounded-md">LEED-ready</span>
-                     <span className="px-2 py-1 bg-white/5 rounded-md">Circular material planning</span>
+                   <h3 className="font-bold text-white text-sm mb-1">Green Building Design</h3>
+                   <div className="flex flex-wrap gap-1.5 text-[11px] text-emerald-100/70">
+                     <span className="px-2 py-0.5 bg-white/5 rounded">Sustainable design insights</span>
+                     <span className="px-2 py-0.5 bg-white/5 rounded">LEED-ready</span>
+                     <span className="px-2 py-0.5 bg-white/5 rounded">Circular material planning</span>
                    </div>
                 </div>
              </div>
 
              {/* Feature 3 */}
-             <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-2xl flex items-start space-x-4 hover:bg-white/10 transition-all hover:-translate-y-0.5">
-                <div className="p-3 bg-[#00A76F]/20 rounded-xl text-[#00C2A8] shrink-0">
-                   <BarChart3 className="w-6 h-6" />
+             <div className="bg-white/5 backdrop-blur-md border border-white/10 p-3.5 rounded-xl flex items-start space-x-3 hover:bg-white/10 transition-all hover:-translate-y-0.5">
+                <div className="p-2 bg-[#00A76F]/20 rounded-lg text-[#00C2A8] shrink-0">
+                   <BarChart3 className="w-4 h-4" />
                 </div>
                 <div>
-                   <h3 className="font-bold text-white text-lg mb-1.5">Construction Intelligence</h3>
-                   <div className="flex flex-wrap gap-2 text-xs text-emerald-100/70">
-                     <span className="px-2 py-1 bg-white/5 rounded-md">Real-time dashboards</span>
-                     <span className="px-2 py-1 bg-white/5 rounded-md">Compliance monitoring</span>
-                     <span className="px-2 py-1 bg-white/5 rounded-md">Predictive analytics</span>
+                   <h3 className="font-bold text-white text-sm mb-1">Construction Intelligence</h3>
+                   <div className="flex flex-wrap gap-1.5 text-[11px] text-emerald-100/70">
+                     <span className="px-2 py-0.5 bg-white/5 rounded">Real-time dashboards</span>
+                     <span className="px-2 py-0.5 bg-white/5 rounded">Compliance monitoring</span>
+                     <span className="px-2 py-0.5 bg-white/5 rounded">Predictive analytics</span>
                    </div>
                 </div>
              </div>
@@ -276,7 +306,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
           {/* Metrics & Compliance Footer */}
           <div className="shrink-0 pt-6 border-t border-white/10">
-            <div className="flex flex-wrap gap-x-8 gap-y-4 mb-5">
+            <div className="flex flex-wrap gap-x-8 gap-y-4">
               <div>
                 <div className="text-2xl font-bold text-white tracking-tight">92%</div>
                 <div className="text-xs font-semibold text-[#00C2A8] uppercase tracking-wider">Material Recovery</div>
@@ -293,14 +323,6 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                 <div className="text-2xl font-bold text-white tracking-tight">500+</div>
                 <div className="text-xs font-semibold text-[#00C2A8] uppercase tracking-wider">Green Projects</div>
               </div>
-            </div>
-            
-            <div className="flex items-center space-x-4 text-[10px] sm:text-xs font-medium text-emerald-100/60 uppercase tracking-widest">
-               <span className="flex items-center"><ShieldCheck className="w-3.5 h-3.5 mr-1.5" /> ISO 27001</span>
-               <span className="w-1 h-1 bg-emerald-500/50 rounded-full" />
-               <span className="flex items-center"><Lock className="w-3.5 h-3.5 mr-1.5" /> SOC 2 Type II</span>
-               <span className="w-1 h-1 bg-emerald-500/50 rounded-full" />
-               <span className="flex items-center"><Globe className="w-3.5 h-3.5 mr-1.5" /> LEED Integration</span>
             </div>
           </div>
 
@@ -419,14 +441,14 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                     </div>
                  </div>
 
-                 <div className="grid grid-cols-2 gap-4 mb-10">
+                 <div className="grid grid-cols-3 gap-3 mb-10">
                     <button 
                       type="button"
                       onClick={handleGoogleLogin}
                       disabled={loading}
-                      className="w-full bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center shadow-sm disabled:opacity-70"
+                      className="w-full bg-white border border-slate-200 text-slate-700 py-3 px-2 rounded-xl font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center shadow-sm disabled:opacity-70 text-xs sm:text-sm"
                     >
-                      <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24">
+                      <svg className="w-4 h-4 mr-1.5 shrink-0" viewBox="0 0 24 24">
                           <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4" />
                           <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853" />
                           <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84z" fill="#FBBC05" />
@@ -436,10 +458,21 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                     </button>
                     <button 
                       type="button"
+                      onClick={handleGitHubLogin}
                       disabled={loading}
-                      className="w-full bg-white border border-slate-200 text-slate-700 py-3 rounded-xl font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center shadow-sm disabled:opacity-70"
+                      className="w-full bg-[#24292e] text-white py-3 px-2 rounded-xl font-semibold hover:bg-[#1b1f23] transition-all flex items-center justify-center shadow-sm disabled:opacity-70 text-xs sm:text-sm"
                     >
-                      <svg className="w-5 h-5 mr-2" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
+                      <svg className="w-4 h-4 mr-1.5 shrink-0 fill-current" viewBox="0 0 24 24">
+                          <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.53 1.032 1.53 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
+                      </svg>
+                      GitHub
+                    </button>
+                    <button 
+                      type="button"
+                      disabled={loading}
+                      className="w-full bg-white border border-slate-200 text-slate-700 py-3 px-2 rounded-xl font-semibold hover:bg-slate-50 hover:border-slate-300 transition-all flex items-center justify-center shadow-sm disabled:opacity-70 text-xs sm:text-sm"
+                    >
+                      <svg className="w-4 h-4 mr-1.5 shrink-0" viewBox="0 0 21 21" xmlns="http://www.w3.org/2000/svg">
                           <rect x="1" y="1" width="9" height="9" fill="#f25022"/>
                           <rect x="11" y="1" width="9" height="9" fill="#7fba00"/>
                           <rect x="1" y="11" width="9" height="9" fill="#00a4ef"/>
@@ -458,8 +491,7 @@ export const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                           <Leaf className="w-6 h-6 text-[#00A76F]" />
                        </div>
                        <div className="text-center sm:text-left">
-                          <h4 className="text-lg font-bold text-[#071A2E] mb-1">New to CG Waste Data?</h4>
-                          <p className="text-xs sm:text-sm text-slate-500 font-medium">Create an enterprise account and start managing demolition waste, recycling workflows, and sustainable building initiatives.</p>
+                          <h4 className="text-lg font-bold text-[#071A2E]">New to CG Waste Data?</h4>
                        </div>
                     </div>
                     
