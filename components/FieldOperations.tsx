@@ -1,8 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { 
-  Camera, MapPin, Truck, Radio, CheckCircle, AlertTriangle, Play, Smartphone, 
-  Wifi, Loader2, Sparkles, Send, Database, Recycle, Shield, Users, RefreshCw, 
-  Upload, Eye, EyeOff, UserCheck, UserX, Info, Route 
+import React, { useState } from 'react';
+import {
+  Camera, MapPin, Truck, Radio, CheckCircle, AlertTriangle, Play, Smartphone,
+  Loader2, Sparkles, Send, Database, Recycle, Shield, Route
 } from 'lucide-react';
 import { classifyWasteMaterial } from '../services/geminiService';
 import { WasteDataStructure } from '../lib/wasteData';
@@ -11,7 +10,7 @@ import { BiometricStudio } from './BiometricStudio';
 
 export default function FieldOperations() {
   const [activeTab, setActiveTab] = useState<'capture' | 'iot' | 'biometric'>('capture');
-  
+
   // Waste Tracker Integration
   const [inputText, setInputText] = useState('');
   const [isClassifying, setIsClassifying] = useState(false);
@@ -29,206 +28,6 @@ export default function FieldOperations() {
       setIsClassifying(false);
     }
   };
-
-  // Facial Landmark Canvas Rendering
-  useEffect(() => {
-    if (!canvasRef.current || !activeInbound) return;
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    const img = new Image();
-    img.crossOrigin = "anonymous";
-    img.src = activeInbound.imageUrl;
-    img.onload = () => {
-      canvas.width = 400;
-      canvas.height = 400;
-      ctx.drawImage(img, 0, 0, 400, 400);
-
-      // Draw bounding box
-      if (showBox) {
-        const box = activeInbound.boundingBox;
-        const x = box.x;
-        const y = box.y;
-        const w = box.width;
-        const h = box.height;
-        const len = 20;
-
-        ctx.strokeStyle = '#10B981'; // Tailwind Emerald-500
-        ctx.lineWidth = 3;
-        ctx.lineJoin = 'round';
-        
-        // Corners
-        // Top-left
-        ctx.beginPath();
-        ctx.moveTo(x + len, y); ctx.lineTo(x, y); ctx.lineTo(x, y + len);
-        ctx.stroke();
-
-        // Top-right
-        ctx.beginPath();
-        ctx.moveTo(x + w - len, y); ctx.lineTo(x + w, y); ctx.lineTo(x + w, y + len);
-        ctx.stroke();
-
-        // Bottom-left
-        ctx.beginPath();
-        ctx.moveTo(x, y + h - len); ctx.lineTo(x, y + h); ctx.lineTo(x + len, y + h);
-        ctx.stroke();
-
-        // Bottom-right
-        ctx.beginPath();
-        ctx.moveTo(x + w, y + h - len); ctx.lineTo(x + w, y + h); ctx.lineTo(x + w - len, y + h);
-        ctx.stroke();
-
-        // Box overlay
-        ctx.fillStyle = 'rgba(16, 185, 129, 0.04)';
-        ctx.fillRect(x, y, w, h);
-
-        // Label
-        ctx.fillStyle = '#10B981';
-        ctx.font = 'bold 11px monospace';
-        ctx.fillText(`SDK FACE: 99.8% CONFIDENCE`, x + 5, y - 8);
-      }
-
-      // Draw 68 landmark coordinates connected organically
-      if (showLandmarks) {
-        ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)'; // Cyan-500 with opacity
-        ctx.lineWidth = 1;
-
-        const pts = activeInbound.landmarks;
-
-        // Jaw line (pts 0-16)
-        ctx.beginPath();
-        for (let i = 0; i < 17; i++) {
-          if (pts[i]) {
-            if (i === 0) ctx.moveTo(pts[i].x, pts[i].y);
-            else ctx.lineTo(pts[i].x, pts[i].y);
-          }
-        }
-        ctx.stroke();
-
-        // Left Eyebrow (pts 17-21)
-        ctx.beginPath();
-        for (let i = 17; i < 22; i++) {
-          if (pts[i]) {
-            if (i === 17) ctx.moveTo(pts[i].x, pts[i].y);
-            else ctx.lineTo(pts[i].x, pts[i].y);
-          }
-        }
-        ctx.stroke();
-
-        // Right Eyebrow (pts 22-26)
-        ctx.beginPath();
-        for (let i = 22; i < 27; i++) {
-          if (pts[i]) {
-            if (i === 22) ctx.moveTo(pts[i].x, pts[i].y);
-            else ctx.lineTo(pts[i].x, pts[i].y);
-          }
-        }
-        ctx.stroke();
-
-        // Nose vertical bridge (pts 27-30)
-        ctx.beginPath();
-        for (let i = 27; i < 31; i++) {
-          if (pts[i]) {
-            if (i === 27) ctx.moveTo(pts[i].x, pts[i].y);
-            else ctx.lineTo(pts[i].x, pts[i].y);
-          }
-        }
-        ctx.stroke();
-
-        // Nose horizontal base (pts 31-35)
-        ctx.beginPath();
-        for (let i = 31; i < 36; i++) {
-          if (pts[i]) {
-            if (i === 31) ctx.moveTo(pts[i].x, pts[i].y);
-            else ctx.lineTo(pts[i].x, pts[i].y);
-          }
-        }
-        ctx.stroke();
-
-        // Left eye loop (pts 36-41)
-        ctx.beginPath();
-        for (let i = 36; i < 42; i++) {
-          if (pts[i]) {
-            if (i === 36) ctx.moveTo(pts[i].x, pts[i].y);
-            else ctx.lineTo(pts[i].x, pts[i].y);
-          }
-        }
-        ctx.closePath();
-        ctx.stroke();
-
-        // Right eye loop (pts 42-47)
-        ctx.beginPath();
-        for (let i = 42; i < 48; i++) {
-          if (pts[i]) {
-            if (i === 42) ctx.moveTo(pts[i].x, pts[i].y);
-            else ctx.lineTo(pts[i].x, pts[i].y);
-          }
-        }
-        ctx.closePath();
-        ctx.stroke();
-
-        // Mouth outer loop (pts 48-59)
-        ctx.beginPath();
-        for (let i = 48; i < 60; i++) {
-          if (pts[i]) {
-            if (i === 48) ctx.moveTo(pts[i].x, pts[i].y);
-            else ctx.lineTo(pts[i].x, pts[i].y);
-          }
-        }
-        ctx.closePath();
-        ctx.stroke();
-
-        // Mouth inner loop (pts 60-67)
-        ctx.beginPath();
-        for (let i = 60; i < 68; i++) {
-          if (pts[i]) {
-            if (i === 60) ctx.moveTo(pts[i].x, pts[i].y);
-            else ctx.lineTo(pts[i].x, pts[i].y);
-          }
-        }
-        ctx.closePath();
-        ctx.stroke();
-
-        // Draw glowing nodes
-        pts.forEach(p => {
-          ctx.beginPath();
-          ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);
-          ctx.fillStyle = '#06B6D4'; // Bright Cyan-500
-          ctx.fill();
-        });
-      }
-    };
-  }, [activeInbound, showBox, showLandmarks, isScanning]);
-
-  // Handle image upload & run SDK simulation
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    setIsScanning(true);
-    const reader = new FileReader();
-    reader.onload = () => {
-      const imgUrl = reader.result as string;
-      setTimeout(() => {
-        const analyzed = analyzeUploadedImage(imgUrl, file.name);
-        setActiveInbound(analyzed);
-        setIsScanning(false);
-      }, 1200); // realistic SDK processing latency
-    };
-    reader.readAsDataURL(file);
-  };
-
-  // Run Matrix sweep scan animation
-  const triggerMatrixScan = () => {
-    setIsScanning(true);
-    setTimeout(() => {
-      setIsScanning(false);
-    }, 1000);
-  };
-
-  // Similarity evaluation metrics
-  const compResult = compareFaces(selectedReferenceProfile.embedding, activeInbound.embedding);
 
   return (
     <div className="h-full flex flex-col space-y-6">
@@ -273,22 +72,22 @@ export default function FieldOperations() {
       <div className="flex-1 overflow-y-auto">
         {activeTab === 'capture' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full pb-6">
-            
+
             <div className="lg:col-span-1 bg-white rounded-xl shadow-sm border border-slate-200 p-6 flex flex-col">
               <h3 className="font-bold text-slate-800 mb-2 flex items-center">
                  <Sparkles className="w-5 h-5 mr-2 text-indigo-600" /> Auto-Classifier
               </h3>
               <p className="text-sm text-slate-500 mb-6">Describe the demolition output or scan debris to automatically split, categorize, and route to marketplace/recyclers.</p>
-              
+
               <div className="flex-1 flex flex-col">
-                <textarea 
+                <textarea
                   className="w-full border border-slate-300 rounded-xl p-4 flex-1 resize-none outline-none focus:border-green-500 focus:ring-1 focus:ring-green-500 transition-all font-medium text-slate-700"
                   placeholder="E.g. '50 tons of concrete rubble mixed with steel rebar and some wood scaffolding from site sectors 4'"
                   value={inputText}
                   onChange={(e) => setInputText(e.target.value)}
                 />
-                
-                <button 
+
+                <button
                   onClick={handleClassify}
                   disabled={isClassifying || !inputText.trim()}
                   className="w-full mt-4 py-3 bg-slate-900 text-white rounded-xl font-medium shadow-md hover:bg-slate-800 transition-colors flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
@@ -312,7 +111,7 @@ export default function FieldOperations() {
                  <h3 className="font-bold flex items-center text-sm"><Recycle className="w-4 h-4 mr-2 text-green-400" /> Platform Multi-Pathway Routing</h3>
                  {classifiedWaste && <span className="bg-indigo-600/30 border border-indigo-400/30 text-indigo-200 px-3 py-1 rounded-full text-xs font-mono">Found {classifiedWaste.length} Streams</span>}
                </div>
-               
+
                <div className="flex-1 overflow-y-auto p-6">
                  {!classifiedWaste && !isClassifying && (
                     <div className="h-full flex flex-col items-center justify-center opacity-40">

@@ -176,3 +176,19 @@ CREATE POLICY "Enable all for authenticated projects" ON public.projects FOR ALL
 CREATE POLICY "Enable all for authenticated edge" ON public.edge_projects FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Enable all for authenticated notifications" ON public.notifications FOR ALL USING (auth.uid() IS NOT NULL);
 CREATE POLICY "Enable all for authenticated logs" ON public.waste_logs FOR ALL USING (auth.uid() IS NOT NULL);
+
+-- ==============================================================================
+-- 9. USER SETTINGS TABLE
+-- Real-time user preferences shared across all signed-in sessions/devices.
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.user_settings (
+  user_id UUID PRIMARY KEY REFERENCES public.users(id) ON DELETE CASCADE,
+  notification_preferences JSONB NOT NULL DEFAULT '{"compliance_alerts": true, "manifest_updates": true, "weekly_reports": true, "marketing_updates": false}'::jsonb,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.user_settings;
+ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Users can manage their own settings" ON public.user_settings
+  FOR ALL USING (auth.uid() = user_id)
+  WITH CHECK (auth.uid() = user_id);

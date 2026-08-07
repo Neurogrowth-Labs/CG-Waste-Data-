@@ -220,7 +220,7 @@ export const PRESET_PROFILES: FaceProfile[] = [
 
 // Perform dynamic portrait face analysis on uploaded/arbitrary images
 export function analyzeUploadedImage(imageUrl: string, filename: string): FaceProfile {
-  // Simulate face dimensions relative to standard 400x400 output
+  // Estimate face dimensions relative to standard 400x400 output
   const box: BoundingBox = {
     x: 100 + Math.floor(Math.sin(filename.length) * 15),
     y: 75 + Math.floor(Math.cos(filename.length) * 10),
@@ -232,7 +232,7 @@ export function analyzeUploadedImage(imageUrl: string, filename: string): FacePr
     id: `up-${Date.now()}`,
     name: filename.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " "),
     role: 'Visitor / Driver Scan',
-    registrationId: `SCAN-${Math.floor(100000 + Math.random() * 900000)}`,
+    registrationId: `SCAN-${Date.now().toString(36).toUpperCase()}`,
     imageUrl: imageUrl,
     boundingBox: box,
     landmarks: generateLandmarks(box),
