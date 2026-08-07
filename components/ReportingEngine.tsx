@@ -1,13 +1,13 @@
 import React, { useState, useMemo } from 'react';
-import { 
-  FileText, Download, Play, Calendar, Filter, RefreshCw, Layers, CheckCircle2, 
-  AlertCircle, ChevronRight, Settings, Code, Sparkles, PieChart as PieChartIcon, 
-  BarChart3, Activity, Clock, ShieldCheck, Mail, Send, Copy, Database, ArrowUpRight, 
+import {
+  FileText, Download, Play, Calendar, Filter, RefreshCw, Layers, CheckCircle2,
+  AlertCircle, ChevronRight, Settings, Code, Sparkles, PieChart as PieChartIcon,
+  BarChart3, Activity, Clock, ShieldCheck, Mail, Send, Copy, Database, ArrowUpRight,
   Table, FileSpreadsheet, FileCode, Printer, HelpCircle, Lock, Eye
 } from 'lucide-react';
-import { 
-  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, 
-  PieChart, Pie, Cell, AreaChart, Area, Legend 
+import {
+  ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid,
+  PieChart, Pie, Cell, AreaChart, Area, Legend
 } from 'recharts';
 import { User } from '../types';
 
@@ -175,7 +175,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
     e.preventDefault();
     if (!newJobName) return;
     const created = {
-      id: `JOB-${Math.floor(100 + Math.random() * 900)}`,
+      id: `JOB-${Date.now().toString(36).toUpperCase()}`,
       name: newJobName,
       cron: newJobCron,
       scheduleDesc: `Cron expression (${newJobCron})`,
@@ -212,19 +212,19 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
 
         {/* Quick Format Export Pills */}
         <div className="flex items-center space-x-2 shrink-0">
-          <button 
+          <button
             onClick={() => handleExportDocument('pdf')}
             className="px-3 py-1.5 bg-red-50 text-red-700 hover:bg-red-100 border border-red-200 rounded-lg text-xs font-semibold flex items-center shadow-sm transition-all"
           >
              <FileText className="w-3.5 h-3.5 mr-1.5" /> PDF Executive
           </button>
-          <button 
+          <button
             onClick={() => handleExportDocument('xlsx')}
             className="px-3 py-1.5 bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 rounded-lg text-xs font-semibold flex items-center shadow-sm transition-all"
           >
              <FileSpreadsheet className="w-3.5 h-3.5 mr-1.5" /> XLSX Excel
           </button>
-          <button 
+          <button
             onClick={() => handleExportDocument('csv')}
             className="px-3 py-1.5 bg-blue-50 text-blue-700 hover:bg-blue-100 border border-blue-200 rounded-lg text-xs font-semibold flex items-center shadow-sm transition-all"
           >
@@ -238,8 +238,8 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
         <button
           onClick={() => setActiveTab('visualize')}
           className={`px-5 py-3 border-b-2 font-medium text-sm transition-all flex items-center space-x-2 ${
-            activeTab === 'visualize' 
-              ? 'border-[#0B8F6C] text-[#0B8F6C] font-semibold' 
+            activeTab === 'visualize'
+              ? 'border-[#0B8F6C] text-[#0B8F6C] font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -250,8 +250,8 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
         <button
           onClick={() => setActiveTab('carbone')}
           className={`px-5 py-3 border-b-2 font-medium text-sm transition-all flex items-center space-x-2 ${
-            activeTab === 'carbone' 
-              ? 'border-[#0B8F6C] text-[#0B8F6C] font-semibold' 
+            activeTab === 'carbone'
+              ? 'border-[#0B8F6C] text-[#0B8F6C] font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -262,8 +262,8 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
         <button
           onClick={() => setActiveTab('reportserver')}
           className={`px-5 py-3 border-b-2 font-medium text-sm transition-all flex items-center space-x-2 ${
-            activeTab === 'reportserver' 
-              ? 'border-[#0B8F6C] text-[#0B8F6C] font-semibold' 
+            activeTab === 'reportserver'
+              ? 'border-[#0B8F6C] text-[#0B8F6C] font-semibold'
               : 'border-transparent text-slate-500 hover:text-slate-800'
           }`}
         >
@@ -280,7 +280,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
         {/* ========================================================= */}
         {activeTab === 'visualize' && (
           <div className="space-y-6">
-            
+
             {/* Jaspersoft Parameter Control Bar */}
             <div className="bg-white p-4 rounded-xl border border-slate-200 shadow-sm">
                <div className="flex items-center justify-between mb-3 border-b border-slate-100 pb-2">
@@ -288,7 +288,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                    <Filter className="w-3.5 h-3.5 mr-1.5 text-[#0B8F6C]" /> Jaspersoft BI Parameter Controls
                  </span>
                  {selectedDrillMaterial && (
-                   <button 
+                   <button
                      onClick={() => setSelectedDrillMaterial(null)}
                      className="text-xs bg-amber-50 text-amber-700 px-2.5 py-1 rounded-md font-medium border border-amber-200 flex items-center hover:bg-amber-100 transition-colors"
                    >
@@ -301,8 +301,8 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                   {/* Project Selector */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1">Project Context</label>
-                    <select 
-                      value={selectedProject} 
+                    <select
+                      value={selectedProject}
                       onChange={(e) => setSelectedProject(e.target.value)}
                       className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B8F6C]"
                     >
@@ -316,8 +316,8 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                   {/* Time Range */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1">Reporting Horizon</label>
-                    <select 
-                      value={selectedTimeRange} 
+                    <select
+                      value={selectedTimeRange}
                       onChange={(e) => setSelectedTimeRange(e.target.value)}
                       className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B8F6C]"
                     >
@@ -331,8 +331,8 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                   {/* Regulatory Framework */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1">Regulatory Standard</label>
-                    <select 
-                      value={selectedFramework} 
+                    <select
+                      value={selectedFramework}
                       onChange={(e) => setSelectedFramework(e.target.value)}
                       className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B8F6C]"
                     >
@@ -346,8 +346,8 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                   {/* Material Stream Filter */}
                   <div>
                     <label className="block text-xs font-semibold text-slate-600 mb-1">Material Category</label>
-                    <select 
-                      value={selectedMaterialFilter} 
+                    <select
+                      value={selectedMaterialFilter}
                       onChange={(e) => setSelectedMaterialFilter(e.target.value)}
                       className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg p-2.5 font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-[#0B8F6C]"
                     >
@@ -406,7 +406,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
 
                  {/* Chart Type Toggle Buttons */}
                  <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-lg border border-slate-200">
-                    <button 
+                    <button
                       onClick={() => setChartType('bar')}
                       className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
                         chartType === 'bar' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
@@ -414,7 +414,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                     >
                       Bar Stack
                     </button>
-                    <button 
+                    <button
                       onClick={() => setChartType('area')}
                       className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
                         chartType === 'area' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
@@ -422,7 +422,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                     >
                       Area Cumulative
                     </button>
-                    <button 
+                    <button
                       onClick={() => setChartType('donut')}
                       className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all ${
                         chartType === 'donut' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
@@ -443,35 +443,35 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                        <YAxis tick={{ fontSize: 11, fill: '#64748b' }} unit="t" />
                        <Tooltip contentStyle={{ borderRadius: '8px', fontSize: '12px' }} />
                        <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
-                       <Bar 
-                         dataKey="concrete" 
-                         name="Concrete & Aggregates" 
-                         fill="#0B8F6C" 
-                         stackId="a" 
+                       <Bar
+                         dataKey="concrete"
+                         name="Concrete & Aggregates"
+                         fill="#0B8F6C"
+                         stackId="a"
                          onClick={(data) => setSelectedDrillMaterial('Concrete')}
                          className="cursor-pointer hover:opacity-80"
                        />
-                       <Bar 
-                         dataKey="steel" 
-                         name="Structural Steel" 
-                         fill="#00C2A8" 
-                         stackId="a" 
+                       <Bar
+                         dataKey="steel"
+                         name="Structural Steel"
+                         fill="#00C2A8"
+                         stackId="a"
                          onClick={(data) => setSelectedDrillMaterial('Steel')}
                          className="cursor-pointer hover:opacity-80"
                        />
-                       <Bar 
-                         dataKey="timber" 
-                         name="Timber & Wood" 
-                         fill="#3B82F6" 
-                         stackId="a" 
+                       <Bar
+                         dataKey="timber"
+                         name="Timber & Wood"
+                         fill="#3B82F6"
+                         stackId="a"
                          onClick={(data) => setSelectedDrillMaterial('Timber')}
                          className="cursor-pointer hover:opacity-80"
                        />
-                       <Bar 
-                         dataKey="hazardous" 
-                         name="Hazardous Material" 
-                         fill="#EF4444" 
-                         stackId="a" 
+                       <Bar
+                         dataKey="hazardous"
+                         name="Hazardous Material"
+                         fill="#EF4444"
+                         stackId="a"
                          onClick={(data) => setSelectedDrillMaterial('Hazardous')}
                          className="cursor-pointer hover:opacity-80"
                        />
@@ -530,7 +530,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                     </h4>
                     <p className="text-xs text-slate-500">Live transaction records linked to selected Jaspersoft parameters.</p>
                  </div>
-                 <button 
+                 <button
                    onClick={() => handleExportDocument('csv')}
                    className="text-xs bg-white text-slate-700 px-3 py-1.5 rounded-lg border border-slate-300 font-semibold hover:bg-slate-50 transition-colors flex items-center shadow-sm"
                  >
@@ -584,7 +584,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
         {/* ========================================================= */}
         {activeTab === 'carbone' && (
           <div className="space-y-6">
-            
+
             {/* Banner Intro */}
             <div className="bg-gradient-to-r from-slate-900 to-slate-800 text-white p-5 rounded-xl border border-slate-700 shadow-md">
                <div className="flex items-start justify-between">
@@ -597,7 +597,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                       Inject structured JSON payloads into custom document templates with dynamic tag bindings like <code className="text-emerald-400 font-mono">{`{d.summary_metrics.total_waste_tons:formatNumber(2)}`}</code> and generate PDF, XLSX, or CSV reports on demand.
                     </p>
                  </div>
-                 <button 
+                 <button
                    onClick={handleCarboneCompile}
                    className="px-4 py-2 bg-[#0B8F6C] text-white rounded-lg text-xs font-bold hover:bg-emerald-600 transition-colors flex items-center shadow-md shrink-0"
                  >
@@ -611,14 +611,14 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                <div className="flex-1">
                   <label className="block text-xs font-bold text-slate-700 mb-1">Carbone Tag Expression Inspector</label>
                   <div className="flex space-x-2">
-                    <input 
-                      type="text" 
-                      value={templateTagExpr} 
+                    <input
+                      type="text"
+                      value={templateTagExpr}
                       onChange={(e) => setTemplateTagExpr(e.target.value)}
                       className="flex-1 text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg p-2 focus:outline-none focus:ring-2 focus:ring-[#0B8F6C]"
                       placeholder="{d.summary_metrics.overall_diversion_percent:percent()}"
                     />
-                    <button 
+                    <button
                       onClick={() => alert(`Tag Test Evaluation Output:\n${templateTagExpr} => 93.0%`)}
                       className="px-3 py-2 bg-slate-800 text-white rounded-lg text-xs font-semibold hover:bg-slate-700 transition-colors"
                     >
@@ -634,8 +634,8 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                       key={fmt}
                       onClick={() => setCarboneFormat(fmt)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold uppercase transition-all ${
-                        carboneFormat === fmt 
-                          ? 'bg-[#0B8F6C] text-white shadow-sm' 
+                        carboneFormat === fmt
+                          ? 'bg-[#0B8F6C] text-white shadow-sm'
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
@@ -647,7 +647,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
 
             {/* Split Screen: Left JSON Payload, Right Template Output Preview */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-               
+
                {/* Left: JSON Input Code Editor */}
                <div className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden shadow-md flex flex-col h-[520px]">
                   <div className="p-3 bg-slate-950 border-b border-slate-800 flex justify-between items-center text-xs text-slate-400">
@@ -687,7 +687,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                      <span className="text-xs font-bold text-slate-700 flex items-center">
                        <Eye className="w-3.5 h-3.5 mr-1.5 text-[#0B8F6C]" /> Carbone Live Rendered Document
                      </span>
-                     <button 
+                     <button
                        onClick={() => handleExportDocument(carboneFormat)}
                        className="px-3 py-1 bg-[#0B8F6C] text-white text-xs font-bold rounded hover:bg-emerald-600 transition-colors flex items-center shadow-sm"
                      >
@@ -698,7 +698,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                   {/* Document Page Simulation */}
                   <div className="flex-1 p-6 overflow-y-auto bg-slate-100">
                      <div className="bg-white p-6 rounded-lg shadow border border-slate-200 max-w-lg mx-auto font-sans text-xs space-y-4">
-                        
+
                         {/* Letterhead Header */}
                         <div className="border-b border-slate-200 pb-4 flex justify-between items-start">
                            <div>
@@ -797,7 +797,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
         {/* ========================================================= */}
         {activeTab === 'reportserver' && (
           <div className="space-y-6">
-            
+
             {/* Header & New Schedule Trigger */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-xl border border-slate-200 shadow-sm">
                <div>
@@ -807,7 +807,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                   </h3>
                   <p className="text-xs text-slate-500">Configure automated report distribution, cron triggers, email digests, and regulatory API webhooks.</p>
                </div>
-               <button 
+               <button
                  onClick={() => setShowScheduleModal(true)}
                  className="px-4 py-2 bg-[#0B8F6C] text-white rounded-lg text-xs font-bold hover:bg-emerald-600 transition-colors flex items-center shadow-sm shrink-0"
                >
@@ -894,7 +894,7 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                        </div>
 
                        <div className="flex items-center space-x-2 shrink-0">
-                          <button 
+                          <button
                             onClick={() => handleExportDocument('pdf')}
                             className="px-3 py-1 bg-white border border-slate-300 text-slate-700 text-xs font-semibold rounded hover:bg-slate-50 transition-colors shadow-sm"
                           >
@@ -923,10 +923,10 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
               <form onSubmit={handleAddJob} className="space-y-4">
                  <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Report Name</label>
-                    <input 
-                      type="text" 
-                      required 
-                      value={newJobName} 
+                    <input
+                      type="text"
+                      required
+                      value={newJobName}
                       onChange={(e) => setNewJobName(e.target.value)}
                       placeholder="e.g. Daily Demolition Waste Summary"
                       className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-[#0B8F6C]"
@@ -935,10 +935,10 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
 
                  <div>
                     <label className="block text-xs font-semibold text-slate-700 mb-1">Cron Schedule (5-part format)</label>
-                    <input 
-                      type="text" 
-                      required 
-                      value={newJobCron} 
+                    <input
+                      type="text"
+                      required
+                      value={newJobCron}
                       onChange={(e) => setNewJobCron(e.target.value)}
                       placeholder="0 8 * * 1"
                       className="w-full text-xs font-mono bg-slate-50 border border-slate-300 rounded-lg p-2.5 focus:outline-none focus:ring-2 focus:ring-[#0B8F6C]"
@@ -949,8 +949,8 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                  <div className="grid grid-cols-2 gap-3">
                     <div>
                        <label className="block text-xs font-semibold text-slate-700 mb-1">Target Format</label>
-                       <select 
-                         value={newJobFormat} 
+                       <select
+                         value={newJobFormat}
                          onChange={(e) => setNewJobFormat(e.target.value)}
                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2.5 font-medium"
                        >
@@ -963,8 +963,8 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
 
                     <div>
                        <label className="block text-xs font-semibold text-slate-700 mb-1">Channel</label>
-                       <select 
-                         value={newJobChannel} 
+                       <select
+                         value={newJobChannel}
                          onChange={(e) => setNewJobChannel(e.target.value)}
                          className="w-full text-xs bg-slate-50 border border-slate-300 rounded-lg p-2.5 font-medium"
                        >
@@ -976,15 +976,15 @@ export const ReportingEngine: React.FC<ReportingEngineProps> = ({ user }) => {
                  </div>
 
                  <div className="pt-2 flex justify-end space-x-2">
-                    <button 
-                      type="button" 
+                    <button
+                      type="button"
                       onClick={() => setShowScheduleModal(false)}
                       className="px-4 py-2 bg-slate-100 text-slate-700 rounded-lg text-xs font-semibold hover:bg-slate-200"
                     >
                        Cancel
                     </button>
-                    <button 
-                      type="submit" 
+                    <button
+                      type="submit"
                       className="px-4 py-2 bg-[#0B8F6C] text-white rounded-lg text-xs font-bold hover:bg-emerald-600"
                     >
                        Save Schedule

@@ -1,17 +1,7 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { Suspense, useState, useEffect } from 'react';
 import Layout from './components/Layout';
-import Dashboard from './components/Dashboard';
-import Intelligence from './components/Intelligence';
-import CreativeStudio from './components/CreativeStudio';
-import LiveAssistant from './components/LiveAssistant';
-import DigitalEDGE from './components/DigitalEDGE';
-import Settings from './components/Settings';
-import FieldOperations from './components/FieldOperations';
-import ComplianceEngine from './components/ComplianceEngine';
-import DigitalTwin from './components/DigitalTwin';
-import Marketplace from './components/Marketplace';
-import EducationHub from './components/EducationHub';
+
 import { RealtimeNotifications } from './components/RealtimeNotifications';
 import { ProjectSourceWorkflow, WasteTrackingWorkflow } from './components/Workflows';
 import { Auth } from './components/Auth';
@@ -21,8 +11,21 @@ import { supabase } from './lib/supabaseClient';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useDebounce } from 'use-debounce';
 
-import { ProjectsView } from './components/views/ProjectsView';
+const ProjectsView = React.lazy(() => import('./components/views/ProjectsView').then((module) => ({ default: module.ProjectsView })));
 import { LandingView } from './components/views/LandingView';
+
+const Dashboard = React.lazy(() => import('./components/Dashboard'));
+const Intelligence = React.lazy(() => import('./components/Intelligence'));
+const CreativeStudio = React.lazy(() => import('./components/CreativeStudio'));
+const LiveAssistant = React.lazy(() => import('./components/LiveAssistant'));
+const DigitalEDGE = React.lazy(() => import('./components/DigitalEDGE'));
+const Settings = React.lazy(() => import('./components/Settings'));
+const FieldOperations = React.lazy(() => import('./components/FieldOperations'));
+const ComplianceEngine = React.lazy(() => import('./components/ComplianceEngine'));
+const DigitalTwin = React.lazy(() => import('./components/DigitalTwin'));
+const Marketplace = React.lazy(() => import('./components/Marketplace'));
+const EducationHub = React.lazy(() => import('./components/EducationHub'));
+
 
 const TrackingView = () => {
    const queryClient = useQueryClient();
@@ -300,7 +303,9 @@ const App: React.FC = () => {
 
   return (
     <Layout currentView={currentView} onNavigate={setCurrentView} user={currentUser} onLogout={handleLogout}>
-      {renderContent()}
+      <Suspense fallback={<div className="h-full flex items-center justify-center text-slate-500"><Loader2 className="w-6 h-6 mr-2 animate-spin text-green-600" /> Loading module...</div>}>
+        {renderContent()}
+      </Suspense>
       
       {/* Real-time Notifications Overlay */}
       <RealtimeNotifications />
@@ -313,7 +318,11 @@ const App: React.FC = () => {
         <Mic className="w-6 h-6" />
       </button>
 
-      {showLive && <LiveAssistant onClose={() => setShowLive(false)} />}
+      {showLive && (
+        <Suspense fallback={null}>
+          <LiveAssistant onClose={() => setShowLive(false)} />
+        </Suspense>
+      )}
     </Layout>
   );
 };

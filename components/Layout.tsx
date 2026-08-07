@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { View, User } from '../types';
+import { canAccessView } from '../lib/permissions';
 import { LayoutDashboard, Building2, Activity, Brain, Palette, Settings, Menu, X, LogOut, Leaf, ChevronRight, Smartphone, Scale, Layers, Store, GraduationCap } from 'lucide-react';
 
 interface LayoutProps {
@@ -27,6 +28,8 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
     { id: View.EDUCATION, label: 'Education Hub', icon: GraduationCap },
     { id: View.SETTINGS, label: 'Settings', icon: Settings },
   ];
+
+  const visibleNavItems = navItems.filter((item) => canAccessView(user.role, item.id));
 
   const handleLegalNavigation = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -68,7 +71,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
         </div>
 
         <nav className="flex-1 px-4 space-y-2 mt-4 overflow-y-auto">
-          {navItems.map((item) => (
+          {visibleNavItems.map((item) => (
             <button
               key={item.id}
               onClick={() => {
@@ -113,7 +116,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
       <div className="flex-1 flex flex-col h-full overflow-hidden relative">
         <header className="h-16 shrink-0 bg-white border-b border-slate-200 flex items-center justify-between px-6 md:px-8">
            <h1 className="text-xl font-semibold text-slate-800">
-             {navItems.find(i => i.id === currentView)?.label}
+             {visibleNavItems.find(i => i.id === currentView)?.label || 'Dashboard'}
            </h1>
            <div className="flex items-center space-x-4">
              <span className="text-xs font-mono bg-slate-100 px-2 py-1 rounded text-slate-500 hidden sm:inline-block">v2.4.0 ({user.jurisdiction})</span>

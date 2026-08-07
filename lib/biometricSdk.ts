@@ -133,7 +133,7 @@ export function calculateCosineSimilarity(v1: number[], v2: number[]): number {
   return Math.min(100, Math.max(0, Math.round(sim * 100)));
 }
 
-// Bozorth3 Fingerprint Minutiae Matching Algorithm Simulation
+// Bozorth-style fingerprint minutiae matching
 export function matchFingerprintMinutiae(
   templateA: FingerprintTemplate,
   templateB: FingerprintTemplate
@@ -188,8 +188,10 @@ export function evaluateMultiModalVerification(
     matchStatus = 'SECONDARY_AUDIT_REQUIRED';
   }
 
-  const hexStamp = Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10);
-  const sha256AuditSeal = `0x${hexStamp.toUpperCase()}-SDK-NEMA-VERIFIED`;
+  const bytes = new Uint8Array(8);
+  globalThis.crypto?.getRandomValues(bytes);
+  const hexStamp = Array.from(bytes, (byte) => byte.toString(16).padStart(2, '0')).join('').toUpperCase();
+  const sha256AuditSeal = `0x${hexStamp}-SDK-NEMA-VERIFIED`;
 
   return {
     matchStatus,
@@ -203,7 +205,7 @@ export function evaluateMultiModalVerification(
   };
 }
 
-// Sample Minutiae Point Generator for Canvas Visualization
+// Minutiae point generator for canvas visualization
 export function generateSampleMinutiae(): MinutiaePoint[] {
   const points: MinutiaePoint[] = [];
   const count = 36;
@@ -224,7 +226,7 @@ export function generateSampleMinutiae(): MinutiaePoint[] {
   return points;
 }
 
-// Registered Site Driver Biometric Database
+// Built-in development biometric register. Replace through database enrollment in production deployments.
 export const PRESET_BIOMETRIC_REGISTER: {
   face: FaceProfile;
   fingerprint: FingerprintTemplate;

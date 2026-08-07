@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { AlertTriangle, CheckCircle, Info, Truck, X, AlertOctagon } from 'lucide-react';
+import { AlertTriangle, CheckCircle, Truck, X, AlertOctagon } from 'lucide-react';
+import { createId } from '../lib/id';
 
 export interface Toast {
   id: string;
@@ -14,7 +15,7 @@ export const RealtimeNotifications: React.FC = () => {
   const [toasts, setToasts] = useState<Toast[]>([]);
 
   const addToast = (title: string, message: string, type: Toast['type']) => {
-    const id = Math.random().toString(36).substring(7);
+    const id = createId('toast');
     setToasts((prev) => [...prev, { id, title, message, type }]);
     // Auto dismiss after 6 seconds
     setTimeout(() => removeToast(id), 6000);

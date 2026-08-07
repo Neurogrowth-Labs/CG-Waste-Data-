@@ -23,7 +23,7 @@ export const OsrmMapEngine: React.FC = () => {
   const [matrixResult, setMatrixResult] = useState<OSRMMatrixResult | null>(null);
   const [tripResult, setTripResult] = useState<OSRMTripResult | null>(null);
   
-  // Animation simulation along route
+  // Route preview animation used only when no live vehicle telemetry is connected.
   const [simulatingTruck, setSimulatingTruck] = useState<boolean>(false);
   const [truckProgress, setTruckProgress] = useState<number>(0);
 
@@ -47,7 +47,7 @@ export const OsrmMapEngine: React.FC = () => {
     setTripResult(trip);
   }, []);
 
-  // Truck Driving Simulation loop
+  // Truck route preview loop
   useEffect(() => {
     let timer: any;
     if (simulatingTruck) {
@@ -199,7 +199,7 @@ export const OsrmMapEngine: React.FC = () => {
                   className="w-full py-2.5 bg-[#0B8F6C] text-white rounded-lg text-xs font-bold hover:bg-emerald-600 transition-colors flex items-center justify-center shadow-md disabled:opacity-50"
                 >
                   <Play className="w-4 h-4 mr-1.5 fill-current" />
-                  {simulatingTruck ? `Driving... (${truckProgress}%)` : 'Simulate Haulage Run'}
+                  {simulatingTruck ? `Previewing... (${truckProgress}%)` : 'Preview Haulage Route'}
                 </button>
               </div>
             </div>

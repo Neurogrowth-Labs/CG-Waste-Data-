@@ -14,6 +14,18 @@ export default defineConfig(({ mode }) => {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
       },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks: {
+              charts: ['recharts'],
+              maps: ['leaflet', 'react-leaflet'],
+              supabase: ['@supabase/supabase-js'],
+              ai: ['@google/genai']
+            }
+          }
+        }
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),
