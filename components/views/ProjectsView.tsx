@@ -17,17 +17,14 @@ L.Icon.Default.mergeOptions({
   shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
 });
 
-// A utility function to mock a coordinate if missing, purely for demonstration
-function generateMockCoords(id: string) {
-  // basic hash
-  let hash = 0;
-  for (let i = 0; i < id.length; i++) {
-    hash = id.charCodeAt(i) + ((hash << 5) - hash);
-  }
-  const baseLat = 51.5074; // London as an example center
-  const baseLng = -0.1278;
-  return [baseLat + (hash % 100) / 1000, baseLng + ((hash >> 4) % 100) / 1000] as [number, number];
-}
+type ProjectWithCoordinates = { id: string; latitude?: number | string | null; longitude?: number | string | null };
+
+const getProjectCoordinates = (project: ProjectWithCoordinates): [number, number] | null => {
+  const latitude = Number(project.latitude);
+  const longitude = Number(project.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  return [latitude, longitude];
+};
 
 export const ProjectsView = () => {
   const [showNewProject, setShowNewProject] = useState(false);
@@ -60,6 +57,12 @@ export const ProjectsView = () => {
 
     return () => { supabase.removeChannel(subscription); };
   }, [queryClient]);
+
+  const mappedProjects = projects
+    .map((project) => ({ project, coordinates: getProjectCoordinates(project) }))
+    .filter((item): item is { project: typeof projects[number]; coordinates: [number, number] } => Boolean(item.coordinates));
+
+  const mapCenter = mappedProjects[0]?.coordinates || [0, 0] as [number, number];
 
   const activeProjectsCount = projects.filter(p => p.status === 'Active').length;
   const hazmatCount = projects.filter(p => p.hazmat_status === 'Detected').length;
@@ -222,27 +225,27 @@ export const ProjectsView = () => {
 
       {viewMode === 'map' ? (
          <div className="bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden h-[500px]">
-           <MapContainer center={[51.505, -0.09]} zoom={11} style={{ height: '100%', width: '100%', zIndex: 0 }}>
+           <MapContainer center={mapCenter} zoom={mappedProjects.length ? 11 : 2} style={{ height: '100%', width: '100%', zIndex: 0 }}>
              <TileLayer
                attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
              />
-             {projects.map(p => {
-                const coords = generateMockCoords(p.id);
-                return (
-                 <Marker key={p.id} position={coords}>
-                   <Popup>
-                     <div className="font-medium text-slate-900">{p.name}</div>
-                     <div className="text-xs text-slate-500 mb-1">{p.location || 'Unknown Location'}</div>
-                     <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${
-                        p.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'
-                     }`}>
-                        {p.status}
-                     </span>
-                   </Popup>
-                 </Marker>
-               )
-             })}
+             {mappedProjects.length === 0 && (
+               <div className="absolute left-4 top-4 z-[500] rounded-lg bg-white/95 px-4 py-3 text-sm text-slate-600 shadow">No verified project coordinates available.</div>
+             )}
+             {mappedProjects.map(({ project: p, coordinates }) => (
+               <Marker key={p.id} position={coordinates}>
+                 <Popup>
+                   <div className="font-medium text-slate-900">{p.name}</div>
+                   <div className="text-xs text-slate-500 mb-1">{p.location || 'Unknown Location'}</div>
+                   <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium ${
+                      p.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'
+                   }`}>
+                      {p.status}
+                   </span>
+                 </Popup>
+               </Marker>
+             ))}
            </MapContainer>
          </div>
       ) : (

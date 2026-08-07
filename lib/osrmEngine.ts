@@ -160,7 +160,7 @@ export function calculateOsrmRoute(
       totalDistKm += stepDist;
     }
 
-    // Elevation simulation (meters)
+    // Estimated elevation profile (meters) until live telemetry/elevation API data is connected
     const elev = Math.round(1450 + Math.sin(t * Math.PI * 3) * 85 + Math.cos(t * Math.PI * 2) * 40);
     const speed = Math.round((55 + Math.sin(t * Math.PI * 4) * 20) * speedFactor);
     elevationProfile.push({
