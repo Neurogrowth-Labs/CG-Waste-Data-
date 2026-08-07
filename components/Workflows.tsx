@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Check, ChevronRight, Truck, Scale, MapPin, ClipboardCheck, ArrowRight, Wand2, Calculator, Save, Loader2, Calendar, History, Layers, Info, Sparkles, Printer } from 'lucide-react';
 import { predictProjectWaste } from '../services/geminiService';
 import { supabase } from '../lib/supabaseClient';
+import { createNumericCode } from '../lib/id';
 
 // --- Shared Components ---
 
@@ -423,7 +424,7 @@ export const WasteTrackingWorkflow: React.FC = () => {
       const user = session?.user;
       if (!user) throw new Error("Authentication required");
 
-      const newManifestId = `MNF-${Math.floor(Math.random() * 90000) + 10000}`;
+      const newManifestId = `MNF-${createNumericCode(5)}`;
       
       // 2. Insert to DB (Real Data for Tracking)
       const { error } = await supabase.from('waste_logs').insert([{

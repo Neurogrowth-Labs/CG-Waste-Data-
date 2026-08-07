@@ -1,8 +1,25 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { User } from '../types';
-import { Shield, Bell, User as UserIcon, Lock, FileText, ChevronRight, Save, LogOut, Loader2, Check } from 'lucide-react';
+import { Bell, User as UserIcon, Lock, FileText, Save, LogOut, Loader2, Check } from 'lucide-react';
 import { supabase } from '../lib/supabaseClient';
+
+
+const NOTIFICATION_OPTIONS = [
+  { key: 'compliance_alerts', label: 'Compliance Alerts' },
+  { key: 'manifest_updates', label: 'Manifest Updates' },
+  { key: 'weekly_reports', label: 'Weekly Reports' },
+  { key: 'marketing_updates', label: 'Marketing Updates' }
+] as const;
+
+const DEFAULT_NOTIFICATION_PREFERENCES = {
+  compliance_alerts: true,
+  manifest_updates: true,
+  weekly_reports: true,
+  marketing_updates: false
+};
+
+type NotificationPreferences = typeof DEFAULT_NOTIFICATION_PREFERENCES;
 
 interface SettingsProps {
   user: User;
@@ -21,6 +38,66 @@ const Settings: React.FC<SettingsProps> = ({ user, onLogout, onProfileUpdate }) 
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [notificationPreferences, setNotificationPreferences] = useState<NotificationPreferences>(DEFAULT_NOTIFICATION_PREFERENCES);
+  const [preferencesSaving, setPreferencesSaving] = useState<string | null>(null);
+
+  useEffect(() => {
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+
+    const loadPreferences = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      const authUser = session?.user;
+      if (!authUser) return;
+
+      const { data, error } = await supabase
+        .from('user_settings')
+        .select('notification_preferences')
+        .eq('user_id', authUser.id)
+        .maybeSingle();
+
+      if (!error && data?.notification_preferences) {
+        setNotificationPreferences({ ...DEFAULT_NOTIFICATION_PREFERENCES, ...data.notification_preferences });
+      }
+
+      channel = supabase.channel(`user_settings:${authUser.id}`)
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'user_settings', filter: `user_id=eq.${authUser.id}` }, (payload) => {
+          const next = payload.new as { notification_preferences?: Partial<NotificationPreferences> } | null;
+          if (next?.notification_preferences) {
+            setNotificationPreferences({ ...DEFAULT_NOTIFICATION_PREFERENCES, ...next.notification_preferences });
+          }
+        })
+        .subscribe();
+    };
+
+    loadPreferences();
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, []);
+
+  const updateNotificationPreference = async (key: keyof NotificationPreferences, enabled: boolean) => {
+    const nextPreferences = { ...notificationPreferences, [key]: enabled };
+    setNotificationPreferences(nextPreferences);
+    setPreferencesSaving(key);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const authUser = session?.user;
+      if (!authUser) throw new Error('No authenticated user found.');
+
+      const { error: settingsError } = await supabase.from('user_settings').upsert({
+        user_id: authUser.id,
+        notification_preferences: nextPreferences,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id' });
+      if (settingsError) throw settingsError;
+    } catch (e: any) {
+      setNotificationPreferences(notificationPreferences);
+      setError(e.message || 'Failed to save notification preference.');
+    } finally {
+      setPreferencesSaving(null);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true);
@@ -122,12 +199,18 @@ const Settings: React.FC<SettingsProps> = ({ user, onLogout, onProfileUpdate }) 
           <div className="space-y-6 animate-fade-in">
              <h3 className="text-lg font-bold text-slate-800">Notification Preferences</h3>
              <div className="space-y-4">
-               {['Compliance Alerts', 'Manifest Updates', 'Weekly Reports', 'Marketing Updates'].map((item, i) => (
-                 <div key={i} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
-                    <span className="font-medium text-slate-700">{item}</span>
+               {NOTIFICATION_OPTIONS.map((item) => (
+                 <div key={item.key} className="flex items-center justify-between p-4 border border-slate-200 rounded-lg hover:bg-slate-50 transition-colors">
+                    <span className="font-medium text-slate-700">{item.label}</span>
                     <label className="relative inline-flex items-center cursor-pointer">
-                      <input type="checkbox" className="sr-only peer" defaultChecked={i < 3} />
-                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600"></div>
+                      <input
+                        type="checkbox"
+                        className="sr-only peer"
+                        checked={notificationPreferences[item.key]}
+                        disabled={preferencesSaving === item.key}
+                        onChange={(event) => updateNotificationPreference(item.key, event.target.checked)}
+                      />
+                      <div className="w-11 h-6 bg-slate-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-green-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-green-600 peer-disabled:opacity-60"></div>
                     </label>
                  </div>
                ))}
