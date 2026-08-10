@@ -11,7 +11,8 @@ export enum View {
   TWIN = 'TWIN',
   MARKETPLACE = 'MARKETPLACE',
   EDUCATION = 'EDUCATION',
-  SETTINGS = 'SETTINGS'
+  SETTINGS = 'SETTINGS',
+  KYC_SECURITY = 'KYC_SECURITY'
 }
 
 export interface WasteMetric {

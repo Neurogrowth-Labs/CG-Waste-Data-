@@ -25,6 +25,7 @@ const ComplianceEngine = React.lazy(() => import('./components/ComplianceEngine'
 const DigitalTwin = React.lazy(() => import('./components/DigitalTwin'));
 const Marketplace = React.lazy(() => import('./components/Marketplace'));
 const EducationHub = React.lazy(() => import('./components/EducationHub'));
+const KycSecurity = React.lazy(() => import('./components/KycSecurity'));
 
 
 const TrackingView = () => {
@@ -114,7 +115,7 @@ const TrackingView = () => {
                                   {m.manifest_number}
                                   <div className="text-[10px] text-slate-400 mt-0.5 flex items-center">
                                     <Clock className="w-3 h-3 mr-1" />
-                                    {m.created_at && m.created_at.toDate ? new Date(m.created_at.toDate()).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : new Date().toLocaleTimeString()}
+                                    {m.created_at ? new Date(m.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '—'}
                                   </div>
                                </td>
                                <td className="px-4 py-3">
@@ -295,6 +296,7 @@ const App: React.FC = () => {
       case View.COMPLIANCE: return <ComplianceEngine user={currentUser} />;
       case View.MARKETPLACE: return <Marketplace />;
       case View.EDUCATION: return <EducationHub />;
+      case View.KYC_SECURITY: return <KycSecurity />;
       case View.CREATIVE: return <CreativeStudio />;
       case View.SETTINGS: return <Settings user={currentUser} onLogout={handleLogout} onProfileUpdate={refreshProfile} />;
       default: return <div className="text-slate-400">Section under development</div>;
