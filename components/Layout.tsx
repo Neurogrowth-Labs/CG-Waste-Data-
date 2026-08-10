@@ -2,7 +2,7 @@
 import React from 'react';
 import { View, User } from '../types';
 import { canAccessView } from '../lib/permissions';
-import { LayoutDashboard, Building2, Activity, Brain, Palette, Settings, Menu, X, LogOut, Leaf, ChevronRight, Smartphone, Scale, Layers, Store, GraduationCap } from 'lucide-react';
+import { LayoutDashboard, Building2, Activity, Brain, Settings, Menu, X, LogOut, Leaf, ChevronRight, Smartphone, Scale, Layers, Store, GraduationCap, ShieldCheck } from 'lucide-react';
 
 interface LayoutProps {
   currentView: View;
@@ -24,6 +24,7 @@ const Layout: React.FC<LayoutProps> = ({ currentView, onNavigate, children, user
     { id: View.INTELLIGENCE, label: 'Intelligence', icon: Brain },
     { id: View.EDGE, label: 'Design Consultant', icon: Leaf },
     { id: View.COMPLIANCE, label: 'Compliance Engine', icon: Scale },
+    { id: View.KYC_SECURITY, label: 'KYC Security', icon: ShieldCheck },
     { id: View.MARKETPLACE, label: 'Marketplace', icon: Store },
     { id: View.EDUCATION, label: 'Education Hub', icon: GraduationCap },
     { id: View.SETTINGS, label: 'Settings', icon: Settings },

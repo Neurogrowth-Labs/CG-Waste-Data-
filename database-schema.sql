@@ -192,3 +192,90 @@ ALTER TABLE public.user_settings ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage their own settings" ON public.user_settings
   FOR ALL USING (auth.uid() = user_id)
   WITH CHECK (auth.uid() = user_id);
+-- ==============================================================================
+-- 10. KYC / FACE RECOGNITION SECURITY BACKEND
+-- Supports FaceOnLive Windows SDK integrations for identity proofing and gate access.
+-- Store encrypted object references and hashes only; avoid persisting raw biometric media.
+-- ==============================================================================
+DO $$ BEGIN
+  CREATE TYPE public.kyc_status AS ENUM ('pending', 'approved', 'manual_review', 'rejected', 'expired');
+EXCEPTION
+  WHEN duplicate_object THEN NULL;
+END $$;
+
+CREATE TABLE IF NOT EXISTS public.kyc_profiles (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
+  subject_type TEXT NOT NULL DEFAULT 'user' CHECK (subject_type IN ('user', 'driver', 'contractor', 'supplier', 'staff')),
+  legal_name TEXT NOT NULL,
+  document_type TEXT NOT NULL CHECK (document_type IN ('passport', 'national_id', 'drivers_license', 'employee_badge')),
+  document_number_hash TEXT NOT NULL,
+  face_template_hash TEXT,
+  face_template_storage_path TEXT,
+  provider TEXT NOT NULL DEFAULT 'faceonlive_windows',
+  provider_repository TEXT NOT NULL DEFAULT 'https://github.com/FaceOnLive/Face-Recognition-SDK-Windows.git',
+  consent_captured_at TIMESTAMPTZ,
+  consent_version TEXT NOT NULL DEFAULT 'kyc-biometric-v1',
+  status public.kyc_status NOT NULL DEFAULT 'pending',
+  expires_at TIMESTAMPTZ,
+  created_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (document_number_hash)
+);
+
+CREATE TABLE IF NOT EXISTS public.kyc_verification_sessions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  kyc_profile_id UUID NOT NULL REFERENCES public.kyc_profiles(id) ON DELETE CASCADE,
+  user_id UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  provider TEXT NOT NULL DEFAULT 'faceonlive_windows',
+  match_score NUMERIC(5,2) NOT NULL CHECK (match_score >= 0 AND match_score <= 100),
+  liveness_score NUMERIC(5,2) NOT NULL CHECK (liveness_score >= 0 AND liveness_score <= 100),
+  anti_spoofing_status TEXT NOT NULL,
+  decision public.kyc_status NOT NULL,
+  audit_id TEXT NOT NULL UNIQUE,
+  audit_payload_hash TEXT NOT NULL,
+  ip_address INET,
+  user_agent TEXT,
+  reviewed_by UUID REFERENCES public.users(id) ON DELETE SET NULL,
+  reviewed_at TIMESTAMPTZ,
+  review_notes TEXT,
+  created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE INDEX IF NOT EXISTS idx_kyc_profiles_user_status ON public.kyc_profiles(user_id, status);
+CREATE INDEX IF NOT EXISTS idx_kyc_sessions_profile_created ON public.kyc_verification_sessions(kyc_profile_id, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_kyc_sessions_decision ON public.kyc_verification_sessions(decision);
+
+CREATE OR REPLACE FUNCTION sync_kyc_profile_status()
+RETURNS trigger AS $$
+BEGIN
+  UPDATE public.kyc_profiles
+  SET status = NEW.decision,
+      face_template_hash = COALESCE(public.kyc_profiles.face_template_hash, NEW.audit_payload_hash),
+      updated_at = NOW()
+  WHERE id = NEW.kyc_profile_id;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS trigger_sync_kyc_profile_status ON public.kyc_verification_sessions;
+CREATE TRIGGER trigger_sync_kyc_profile_status
+  AFTER INSERT ON public.kyc_verification_sessions
+  FOR EACH ROW EXECUTE PROCEDURE sync_kyc_profile_status();
+
+ALTER PUBLICATION supabase_realtime ADD TABLE public.kyc_profiles;
+ALTER PUBLICATION supabase_realtime ADD TABLE public.kyc_verification_sessions;
+
+ALTER TABLE public.kyc_profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.kyc_verification_sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can read their own KYC profile" ON public.kyc_profiles
+  FOR SELECT USING (auth.uid() = user_id OR EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('admin', 'manager', 'auditor', 'regulator')));
+CREATE POLICY "Privileged users can manage KYC profiles" ON public.kyc_profiles
+  FOR ALL USING (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('admin', 'manager', 'auditor')))
+  WITH CHECK (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('admin', 'manager', 'auditor')));
+CREATE POLICY "Users can read their own KYC sessions" ON public.kyc_verification_sessions
+  FOR SELECT USING (auth.uid() = user_id OR EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('admin', 'manager', 'auditor', 'regulator')));
+CREATE POLICY "Privileged users can create KYC sessions" ON public.kyc_verification_sessions
+  FOR INSERT WITH CHECK (EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('admin', 'manager', 'auditor')));
